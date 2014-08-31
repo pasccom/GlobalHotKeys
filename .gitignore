@@ -1,0 +1,7 @@
+# Ignores useless project configuration files:
+App.config
+*.csproj.user
+
+# Ignores build folders
+bin/
+obj/
