@@ -75,6 +75,7 @@ namespace GlobalHotKeys
 
         public Shortcut()
         {
+            Key = Keys.None;
             Loaded = false;
             Params = new List<string>();
         }
@@ -108,7 +109,33 @@ namespace GlobalHotKeys
             throw new ArgumentException("Expected a key name. The key names are the name of the enum Keys");
         }
 
-        public override string ToString()
+        public bool isSpecial()
+        {
+            // Signals CTRL + ALT + Escape reserved shortcut (reset):
+            if ((Modifier == (Shortcut.Modifiers.ALT | Shortcut.Modifiers.CTRL)) && (Key == Shortcut.Keys.Esc))
+                return true;
+            // Prevents the user to load CTRL + ALT + C reserved shortcut (exit):
+            if ((Modifier == (Shortcut.Modifiers.ALT | Shortcut.Modifiers.CTRL)) && (Key == Shortcut.Keys.C))
+                return true;
+
+            return false;
+        }
+
+        public bool isValid()
+        {
+            // Prevents a shortcut with no key to load:
+            if (Key == Keys.None)
+                return false;
+
+            // Prevents an empty shortcut to load:
+            if ((Class == null) || (Class == String.Empty))
+                return false;
+            if ((Method == null) || (Method == String.Empty))
+                return false;
+            return true;
+        }
+
+        public string keyCombination()
         {
             Shortcut.Modifiers[] modifiers = { Shortcut.Modifiers.ALT, Shortcut.Modifiers.CTRL, Shortcut.Modifiers.SHIFT, Shortcut.Modifiers.META };
             string ret = String.Empty;
@@ -116,7 +143,15 @@ namespace GlobalHotKeys
             for (int i = 0; i < modifiers.Length; i++)
                 if ((uint)(Modifier & modifiers[i]) != 0)
                     ret += (modifiers[i] + "+");
-            ret += (Key + " -> ");
+            ret += Key;
+
+            return ret;
+        }
+
+        public string action()
+        {
+            string ret = String.Empty;
+
             if ((Class != null) && (Class != String.Empty)) {
                 ret += Class;
                 if ((Class != null) && (Class != String.Empty))
@@ -126,5 +161,9 @@ namespace GlobalHotKeys
             return ret;
         }
 
+        public override string ToString()
+        {
+            return (keyCombination() + " -> " + action());
+        }
     }
 }

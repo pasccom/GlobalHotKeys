@@ -153,11 +153,9 @@ namespace GlobalHotKeys
 
             private void checkShortcut(Shortcut shortcut)
             {
-                // Prevents an empty shortcut to load:
-                if ((shortcut.Class == null) || (shortcut.Class == String.Empty))
+                // Check that shortcut is valid:
+                if (!shortcut.isValid())
                     throw new InavalidShortcutException("Loading a shortcut with no or empty class is forbidden", shortcut);
-                if ((shortcut.Method == null) || (shortcut.Method == String.Empty))
-                    throw new InavalidShortcutException("Loading a shortcut with no or empty method is forbidden", shortcut);
 
                 // Gets the method class :
                 Type providerClass = Type.GetType("GlobalHotKeys." + shortcut.Class);
@@ -194,7 +192,7 @@ namespace GlobalHotKeys
                 for (int i = 0; i < shortcut.Params.Count; i++)
                     param[i] = shortcut.Params[i];
 
-                Console.WriteLine("Calling {0}.{1}({2})", shortcut.Class, shortcut.Method, String.Join<string>(",", shortcut.Params));
+                Console.WriteLine("Calling {0}", shortcut.action());
 
                 // Try to get the singleton:
                 try {
@@ -240,12 +238,8 @@ namespace GlobalHotKeys
 
             private void loadShortcut(Shortcut shortcut, int id, bool userDefined = true)
             {
-                // Prevents the user to load CTRL + ALT + Escape reserved shortcut:
-                if (userDefined && (shortcut.Modifier == (Shortcut.Modifiers.ALT | Shortcut.Modifiers.CTRL)) && (shortcut.Key == Shortcut.Keys.Esc))
-                    throw new InavalidShortcutException("CTRL + ALT + ECHAP is a reserved shortcut", shortcut);
-                // Prevents the user to load CTRL + ALT + C reserved shortcut:
-                if (userDefined && (shortcut.Modifier == (Shortcut.Modifiers.ALT | Shortcut.Modifiers.CTRL)) && (shortcut.Key == Shortcut.Keys.C))
-                    throw new InavalidShortcutException("CTRL + ALT + C is a reserved shortcut", shortcut);
+                if (userDefined && shortcut.isSpecial())
+                    throw new InavalidShortcutException(shortcut.keyCombination() + " is a reserved shortcut", shortcut);
 
                 checkShortcut(shortcut);
 
