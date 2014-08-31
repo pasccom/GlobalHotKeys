@@ -6,7 +6,32 @@ namespace GlobalHotKeys
 {
     class Shortcut
     {
+        /// <summary>
+        ///     Enumeration of all supported modifiers.
+        ///     <list type="bullet">
+        ///         <item><term>ALT</term> <description>Any of the ALT key is pressed</description></item>
+        ///         <item><term>CTRL</term> <description>Any of the CTRL key is pressed</description></item>
+        ///         <item><term>SHIFT</term> <description>Any of the Shift key is pressed</description></item>
+        ///         <item><term>META</term> <description>Any of the "windows" key is pressed</description></item>
+        ///     </list>
+        /// </summary>
         public enum Modifiers { ALT = 0x1, CTRL = 0x2, SHIFT = 0x4, META = 0x8 }
+        /// <summary>
+        ///     Enumeration of the supported keys. 
+        ///     <list type="bullet">
+        ///         <item><term>None</term> <description>No key. The shortcut is invalid.</description></item>
+        ///         <item><term>Esc</term> <description>Escape key.</description></item>
+        ///         <item><term>[A-Z]</term> <description>The specified letter is pressed.</description></item>
+        ///         <item><term>Left</term> <description>The left arrow key is pressed.</description></item>
+        ///         <item><term>Up</term> <description>The up arrow key is pressed.</description></item>
+        ///         <item><term>Right</term> <description>The right arrow key is pressed.</description></item>
+        ///         <item><term>Down</term> <description>The down arrow key is pressed.</description></item>
+        ///         <item><term>PgUp</term> <description>The previous page key is pressed.</description></item>
+        ///         <item><term>PgDown</term> <description>The next page key is pressed.</description></item>
+        ///         <item><term>F[1-12]</term> <description>The specified function key is pressed.</description></item>
+        ///         <item><term>N[0-9]</term> <description>The specified numpad key is pressed.</description></item>
+        ///     </list>
+        /// </summary>
         public enum Keys
         {
             None = 0x0, Esc = 0x1B,
@@ -16,7 +41,17 @@ namespace GlobalHotKeys
             N0 = 0x60, N1 = 0x61, N2 = 0x62, N3 = 0x63, N4 = 0x64, N5 = 0x65, N6 = 0x66, N7 = 0x67, N8 = 0x68, N9 = 0x69
         }
 
+        /// <summary>
+        ///     Modifiers of this shortcut.
+        /// </summary>
+        /// <para> To add or remove a modifier, use <see cref="addModifier"/> and <see cref="removeModifier"/> respectively.</para>
+        /// <seealso cref="Modifier"/>
         public Modifiers Modifier { get; private set; }
+        /// <summary>
+        ///     Key of this shortcut.
+        /// </summary>
+        /// <para> To set the key use the <see cref="setKey"/> method.</para>
+        /// <seealso cref="Keys"/>
         public Keys Key { get; private set; }
         public string Class { get; set; }
         public string Method { get; set; }
