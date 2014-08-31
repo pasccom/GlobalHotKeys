@@ -216,7 +216,8 @@ namespace GlobalHotKeys
                     return;
                 } catch (TargetInvocationException e) {
                     Console.WriteLine("Shortcut method failed with exception: " + e.GetBaseException());
-                } catch (Exception e) {
+                } catch (Exception) {
+                    // Ignore excepetion.
                 }
 
                 // Try to invoke a static method (there seems to be no singleton):
