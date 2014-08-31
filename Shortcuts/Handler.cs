@@ -171,7 +171,7 @@ namespace GlobalHotKeys
                         null,
                         null
                      ) as List<string>;
-                    Console.WriteLine("Authorized methods are: " + authorizedMethods);
+                    Console.WriteLine("Authorized methods are: " + String.Join<string>(",", authorizedMethods));
                 } catch (Exception e) {
                     throw new UnauthorizedShortcutException("Could not find the static public property AuthorizedMethods in specified class: " + shortcut.Class, shortcut, e);
                 }
