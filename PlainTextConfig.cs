@@ -1,12 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace GlobalHotKeys
 {
     class PlainTextConfig : ConfigProvider
     {
-        public string FileName { get; set; }
+        private string mFileName;
+        public string FileName {
+            get
+            {
+                return mFileName;
+            }
+
+            set
+            {
+                checkConfigFile(value);
+                mFileName = value;
+            }
+        }
 
         public PlainTextConfig(string filename)
         {
@@ -15,7 +29,7 @@ namespace GlobalHotKeys
 
         public override void parseConfig()
         {
-            TextReader inStream = new StreamReader(new FileStream(FileName, FileMode.Open, FileAccess.Read));
+            TextReader inStream = new StreamReader(new FileStream(mFileName, FileMode.Open, FileAccess.Read));
             uint l = 0;
 
             while (true) {
@@ -39,7 +53,7 @@ namespace GlobalHotKeys
                     try {
                         shortcut.setKey(keyToken);
                     } catch (System.Reflection.ReflectionTypeLoadException e) {
-                        throw new BadConfigException("Invalid key name: " + keyToken, FileName, l, (uint)i, e);
+                        throw new BadConfigException("Invalid key name: " + keyToken, mFileName, l, (uint)i, e);
                     }
 
                     // Find class and method:
@@ -59,13 +73,87 @@ namespace GlobalHotKeys
             inStream.Close();
         }
 
+        private void checkConfigFile(string path)
+        {
+            if (!File.Exists(path))
+                throw new FileNotFoundException("Could not find config file", path);
+
+            IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+            IdentityReference idAdmin = new NTAccount("Administrateurs").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+
+            Console.WriteLine("Systeme identity: " + idSystem);
+            Console.WriteLine("Admin identity: " + idAdmin);
+
+            IdentityReference idOwner = File.GetAccessControl(path, AccessControlSections.Owner).GetOwner(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+            //IdentityReference idGroup = File.GetAccessControl(path, AccessControlSections.Group).GetGroup(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+
+            Console.WriteLine("Owner identity: " + idOwner);
+            //Console.WriteLine("Group identity: " + idGroup);
+
+            if ((idOwner != idSystem) && (idOwner != idAdmin))
+                throw new UnauthorizedAccessException("Users should not be owner of the configuration file.");
+
+            AuthorizationRuleCollection acl = File.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier"));
+            Dictionary<IdentityReference, FileSystemRights> userAllowRights = new Dictionary<IdentityReference,FileSystemRights>();
+            Dictionary<IdentityReference, FileSystemRights> userDenyRights = new Dictionary<IdentityReference,FileSystemRights>();
+            
+            for (int i = 0; i < acl.Count; i++) {
+                Console.WriteLine("Authorization rule type: " + acl[i].GetType());
+                FileSystemAccessRule ace = acl[i] as FileSystemAccessRule;
+                if (ace != null) {
+                    Console.WriteLine("Access type: " + ace.AccessControlType);
+                    Console.WriteLine("Access mask: " + ace.FileSystemRights);
+                    Console.WriteLine("Identity: " + ace.IdentityReference);
+                }
+
+                // If rule is not a FileSystemSecurityRule then it is ignored.
+                if (ace == null)
+                    continue;
+
+                // Computes allowance of the identity:
+                if (ace.AccessControlType == AccessControlType.Allow) {
+                    if (!userAllowRights.ContainsKey(ace.IdentityReference))
+                        userAllowRights.Add(ace.IdentityReference, 0);
+                    userAllowRights[ace.IdentityReference] |= ace.FileSystemRights;
+                }
+
+                if (ace.AccessControlType == AccessControlType.Deny) {
+                    if (!userDenyRights.ContainsKey(ace.IdentityReference))
+                        userDenyRights.Add(ace.IdentityReference, 0);
+                    userDenyRights[ace.IdentityReference] |= ace.FileSystemRights;
+                }
+            }
+
+            foreach (KeyValuePair<IdentityReference, FileSystemRights> keyval in userAllowRights) {
+                // System and Admin user can do what they want.
+                if (keyval.Key == idSystem)
+                    continue;
+                if (keyval.Key == idAdmin)
+                    continue;
+
+                // Computes real user rights:
+                FileSystemRights rights = keyval.Value;
+                if (userDenyRights.ContainsKey(keyval.Key))
+                    rights &= (~userDenyRights[keyval.Key]);
+
+                // Check user rights
+                if (((rights & FileSystemRights.WriteData) != 0)
+                 || ((rights & FileSystemRights.AppendData) != 0)
+                 || ((rights & FileSystemRights.WriteAttributes) != 0)
+                 || ((rights & FileSystemRights.WriteExtendedAttributes) != 0)
+                 || ((rights & FileSystemRights.ChangePermissions) != 0)
+                 || ((rights & FileSystemRights.TakeOwnership) != 0))
+                    throw new UnauthorizedAccessException("Users should not be able to modify the config file.");
+            }
+        }
+
         private void parseModifiers(Shortcut shortcut, string line)
         {
             Shortcut.Modifiers[] modifiers = { Shortcut.Modifiers.ALT, Shortcut.Modifiers.CTRL, Shortcut.Modifiers.SHIFT, Shortcut.Modifiers.META };
 
             // Line is too short to hold modifiers:
             if (line.Length < 8)
-                throw new BadConfigException("Unexpected end of line", FileName, 0, 8);
+                throw new BadConfigException("Unexpected end of line", mFileName, 0, 8);
 
             for (int i = 0; i < modifiers.Length; i++) {
                 if (line[2 * i + 1] == 'X')
@@ -73,7 +161,7 @@ namespace GlobalHotKeys
                 else if (line[2 * i + 1] == 'O')
                     shortcut.removeModifier(modifiers[i]);
                 else
-                    throw new BadConfigException("Invalid setting for " + modifiers[i] + " modifier", FileName, 0, (uint)(2 * i + 2));
+                    throw new BadConfigException("Invalid setting for " + modifiers[i] + " modifier", mFileName, 0, (uint)(2 * i + 2));
             }
         }
 
@@ -130,7 +218,7 @@ namespace GlobalHotKeys
             if (b >= line.Length)
                 return String.Empty;
             if (i > line.Length)
-                throw new BadConfigException("Unexpected end of line", FileName, 0, (uint)line.Length);
+                throw new BadConfigException("Unexpected end of line", mFileName, 0, (uint)line.Length);
 
             return line.Substring(b + 1, i - b - 2).Replace("\\\"", "\"").Replace("\\\\", "\\");
         }
