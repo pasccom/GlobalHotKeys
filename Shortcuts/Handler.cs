@@ -66,9 +66,9 @@ namespace GlobalHotKeys
                 unloadShortcut(Shortcut.resetShortcut, -2);
             }
 
-            public void resetShortcuts(string [] args)
+            public void resetShortcuts(List<string> args)
             {
-                if (args.Length != 1)
+                if (args.Count != 1)
                     throw new BadArgumentCountException("resetShortcuts() admits no arguments", 0);
 
                 unloadShortcuts();
@@ -76,9 +76,9 @@ namespace GlobalHotKeys
                 loadShortcuts();
             }
 
-            public void loadConfig(string [] args)
+            public void loadConfig(List<string> args)
             {
-                if (args.Length != 1)
+                if (args.Count != 1)
                     throw new BadArgumentCountException("loadConfig(path) needs 1 argument", 1);
 
                 string path = args[1];
@@ -148,7 +148,7 @@ namespace GlobalHotKeys
                     if (id == -1)
                         return;
                     if (id == -2)
-                        resetShortcuts(new string[]{});
+                        resetShortcuts(new List<string>());
 
                     if (id > 0) {
                         if (id <= mCurrentShortcutsList.Count)
@@ -196,10 +196,6 @@ namespace GlobalHotKeys
             {
                 checkShortcut(shortcut);
 
-                string[] param = new string[shortcut.Params.Count];
-                for (int i = 0; i < shortcut.Params.Count; i++)
-                    param[i] = shortcut.Params[i];
-
                 Console.WriteLine("Calling {0}", shortcut.action());
 
                 // Try to get the singleton:
@@ -217,7 +213,7 @@ namespace GlobalHotKeys
                         BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.ExactBinding,
                         null,
                         singleton,
-                        new Object[] { param }
+                        new Object[] { shortcut.Params }
                     );
                     return;
                 } catch (TargetInvocationException e) {
@@ -234,7 +230,7 @@ namespace GlobalHotKeys
                         BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.ExactBinding,
                         null,
                         null,
-                        new Object[] { param }
+                        new Object[] { shortcut.Params }
                     );
                 } catch (TargetInvocationException e) {
                     Console.WriteLine("Shortcut method failed with exception: " + e.GetBaseException());
