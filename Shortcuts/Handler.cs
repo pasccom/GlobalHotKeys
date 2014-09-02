@@ -66,15 +66,23 @@ namespace GlobalHotKeys
                 unloadShortcut(Shortcut.resetShortcut, -2);
             }
 
-            public void resetShortcuts()
+            public void resetShortcuts(string [] args)
             {
+                if (args.Length != 1)
+                    throw new BadArgumentCountException("resetShortcuts() admits no arguments", 0);
+
                 unloadShortcuts();
                 mCurrentShortcutsList = mDefaultShortcutsList;
                 loadShortcuts();
             }
 
-            public void loadConfig(string path)
+            public void loadConfig(string [] args)
             {
+                if (args.Length != 1)
+                    throw new BadArgumentCountException("loadConfig(path) needs 1 argument", 1);
+
+                string path = args[1];
+
                 unloadShortcuts();
 
                 mCurrentShortcutsList = new List<Shortcut>();
@@ -140,7 +148,7 @@ namespace GlobalHotKeys
                     if (id == -1)
                         return;
                     if (id == -2)
-                        resetShortcuts();
+                        resetShortcuts(new string[]{});
 
                     if (id > 0) {
                         if (id <= mCurrentShortcutsList.Count)
@@ -165,9 +173,9 @@ namespace GlobalHotKeys
                 List<string> authorizedMethods;
                 try {
                     authorizedMethods = providerClass.InvokeMember(
-                        "AuthorizedMethods", 
-                        BindingFlags.DeclaredOnly | BindingFlags.Static |  BindingFlags.GetProperty | BindingFlags.Public,
-                        null, 
+                        "AuthorizedMethods",
+                        BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.GetProperty | BindingFlags.Public,
+                        null,
                         null,
                         null
                      ) as List<string>;
@@ -188,7 +196,7 @@ namespace GlobalHotKeys
             {
                 checkShortcut(shortcut);
 
-                Object[] param = new Object[shortcut.Params.Count];
+                string[] param = new string[shortcut.Params.Count];
                 for (int i = 0; i < shortcut.Params.Count; i++)
                     param[i] = shortcut.Params[i];
 
@@ -206,10 +214,10 @@ namespace GlobalHotKeys
                     );
                     providerClass.InvokeMember(
                         shortcut.Method,
-                        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.Public,
+                        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.ExactBinding,
                         null,
                         singleton,
-                        param
+                        new Object[] { param }
                     );
                     return;
                 } catch (TargetInvocationException e) {
@@ -223,10 +231,10 @@ namespace GlobalHotKeys
                     Type providerClass = Type.GetType("GlobalHotKeys." + shortcut.Class, true);
                     providerClass.InvokeMember(
                         shortcut.Method,
-                        BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public,
+                        BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.ExactBinding,
                         null,
                         null,
-                        param
+                        new Object[] { param }
                     );
                 } catch (TargetInvocationException e) {
                     Console.WriteLine("Shortcut method failed with exception: " + e.GetBaseException());
