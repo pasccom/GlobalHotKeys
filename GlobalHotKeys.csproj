@@ -71,6 +71,7 @@
     <Compile Include="Shortcuts\User32.cs" />
     <Compile Include="Power\User32.cs" />
     <Compile Include="Windows\Manager.cs" />
+    <Compile Include="Windows\User32.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
