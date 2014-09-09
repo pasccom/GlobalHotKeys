@@ -19,7 +19,7 @@ namespace GlobalHotKeys
             static public void shutdown(List<string> args)
             {
                 if (args.Count > 1)
-                    throw new Shortcuts.BadArgumentCountException("shutdown(when) admits 1 optional argument", 0, 1);
+                    throw new Shortcuts.BadArgumentCountException("shutdown([when]) admits 1 optional argument", 0, 1);
                 
                 int when = 60;
                 if (args.Count == 1)
@@ -33,7 +33,7 @@ namespace GlobalHotKeys
             static public void reboot(List<string> args)
             {
                 if (args.Count > 1)
-                    throw new Shortcuts.BadArgumentCountException("reboot(when) admits 1 optional argument", 0, 1);
+                    throw new Shortcuts.BadArgumentCountException("reboot([when]) admits 1 optional argument", 0, 1);
 
                 int when = 60;
                 if (args.Count == 1)
