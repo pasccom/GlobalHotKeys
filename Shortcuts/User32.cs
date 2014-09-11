@@ -7,8 +7,8 @@ namespace GlobalHotkeys
     {
         class User32
         {
-            internal static uint WM_HOTKEY = 0x0312; /*!< Hotkey message identifier */
-            internal static int MOD_NOREPEAT = 0x4000; /*!< Changes the hotkey behavior so that the keyboard auto-repeat does not yield multiple hotkey notifications. */
+            internal static readonly uint WM_HOTKEY = 0x0312; /*!< Hotkey message identifier */
+            internal static readonly int MOD_NOREPEAT = 0x4000; /*!< Changes the hotkey behavior so that the keyboard auto-repeat does not yield multiple hotkey notifications. */
 
             internal struct Point
             {
