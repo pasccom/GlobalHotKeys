@@ -20,16 +20,17 @@ namespace GlobalHotKeys
 
             static public void activate(List<string> args)
             {
-                if ((args.Count < 1) || (args.Count > 3))
-                    throw new Shortcuts.BadArgumentCountException("activate(exePath, [title, [startPath]]) needs 1 argument at least and admits 2 optional arguments.", 1, 3);
+                if ((args.Count < 2) || (args.Count > 4))
+                    throw new Shortcuts.BadArgumentCountException("activate(size, exePath, [title, [startPath]]) needs 2 arguments at least and admits 2 optional arguments.", 2, 4);
 
-                string exePath = args[0];
+                int sizeFlag = parseSize(args[0]);
+                string exePath = args[1];
                 string title = null;
                 string startPath = null;
                 if (args.Count >= 2)
-                    title = args[1];
+                    title = args[2];
                 if (args.Count >= 3)
-                    startPath = args[2];
+                    startPath = args[3];
 
                 Console.WriteLine("Called Windows.Manager.activate(\"{0}\", \"{1}\", \"{2}\")", exePath, title, startPath);
 
@@ -40,14 +41,14 @@ namespace GlobalHotKeys
                 } else {
                     if (title == null) {
                         // Use the .NET provided MainWindowHandle (not always good...)
-                        activate(processes[0].MainWindowHandle);
+                        activate(processes[0].MainWindowHandle, sizeFlag);
                     } else {
                         // Look for a visible window whose title matches the provided regexp
                         List<IntPtr> windows = findVisibleWindows(processes[0].Threads, title);
                         if (windows.Count == 0)
                             Console.WriteLine("Warning: No matching windows", windows.Count - 1);
                         else
-                            activate(windows[0]);
+                            activate(windows[0], sizeFlag);
 
                         if (windows.Count > 1)
                             Console.WriteLine("Warning: {0} matching windows ignored", windows.Count - 1);
@@ -60,13 +61,14 @@ namespace GlobalHotKeys
 
             static public void focus(List<string> args)
             {
-                if ((args.Count < 1) || (args.Count > 3))
-                    throw new Shortcuts.BadArgumentCountException("focus(exePath, [title]) needs 1 argument at least and admits 1 optional argument.", 1, 2);
+                if ((args.Count < 2) || (args.Count > 4))
+                    throw new Shortcuts.BadArgumentCountException("focus(size, exePath, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
 
-                string exePath = args[0];
+                int sizeFlag = parseSize(args[0]);
+                string exePath = args[1];
                 string title = null;
-                if (args.Count == 2)
-                    title = args[1];
+                if (args.Count >= 2)
+                    title = args[2];
 
                 Console.WriteLine("Called Windows.Manager.focus(\"{0}\", \"{1}\")", exePath, title);
 
@@ -76,14 +78,14 @@ namespace GlobalHotKeys
                 } else {
                     if (title == null) {
                         // Use the .NET provided MainWindowHandle (not always good...)
-                        activate(processes[0].MainWindowHandle);
+                        activate(processes[0].MainWindowHandle, sizeFlag);
                     } else {
                         // Look for a visible window whose title matches the provided regexp
                         List<IntPtr> windows = findVisibleWindows(processes[0].Threads, title);
                         if (windows.Count == 0)
                             Console.WriteLine("Warning: No matching windows", windows.Count - 1);
                         else
-                            activate(windows[0]);
+                            activate(windows[0], sizeFlag);
 
                         if (windows.Count > 1)
                             Console.WriteLine("Warning: {0} matching windows ignored", windows.Count - 1);
@@ -109,9 +111,23 @@ namespace GlobalHotKeys
                 startProcess(exePath, startPath);
             }
 
-            static private void activate(IntPtr winHandle)
+            static private int parseSize(String sizeName)
             {
-                User32.ShowWindow(winHandle, User32.SW_SHOWDEFAULT);
+                switch (sizeName) {
+                case "Maximize":
+                    return User32.SW_SHOWMAXIMIZED;
+                case "Normal":
+                    return User32.SW_SHOWNORMAL;
+                case "Default":
+                    return User32.SW_SHOWDEFAULT;
+                default:
+                    throw new ArgumentException("The size argument should be either \"Default\", \"Normal\" or \"Maximized\"");
+                }
+            }
+
+            static private void activate(IntPtr winHandle, int sizeFlag)
+            {
+                User32.ShowWindow(winHandle, sizeFlag);
                 User32.SetForegroundWindow(winHandle);
             }
 
@@ -136,7 +152,9 @@ namespace GlobalHotKeys
                     try {
                         if (p.Modules[0].FileName == exePath)
                             processesMatch.Add(p);
-                    } catch (System.ComponentModel.Win32Exception) { }
+                    } catch (System.ComponentModel.Win32Exception) { // In case the user has not enough rights to read the process information
+                    } catch (System.InvalidOperationException) { // In case the process has exited between GetProcesses() and access to Modules[0] 
+                    }
                 }
 
                 return processesMatch;
