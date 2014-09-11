@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using log4net;
 
 namespace GlobalHotKeys
 {
     class PlainTextConfig : ConfigProvider
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(PlainTextConfig));
+
         private string mFileName;
         public string FileName {
             get
@@ -40,8 +43,10 @@ namespace GlobalHotKeys
                     break;
 
                 // Ignores lines starting with another character than space. May be used for comments:
-                if (!line.StartsWith(" "))
+                if (!line.StartsWith(" ")) {
+                    log.DebugFormat("Ignored line \"{0}\"", line);
                     continue;
+                }
 
                 Shortcut shortcut = new Shortcut();
 
@@ -81,14 +86,14 @@ namespace GlobalHotKeys
             IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
             IdentityReference idAdmin = new NTAccount("Administrateurs").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
 
-            Console.WriteLine("Systeme identity: " + idSystem);
-            Console.WriteLine("Admin identity: " + idAdmin);
+            log.Debug("Systeme identity: " + idSystem);
+            log.Debug("Admin identity: " + idAdmin);
 
             IdentityReference idOwner = File.GetAccessControl(path, AccessControlSections.Owner).GetOwner(Type.GetType("System.Security.Principal.SecurityIdentifier"));
             //IdentityReference idGroup = File.GetAccessControl(path, AccessControlSections.Group).GetGroup(Type.GetType("System.Security.Principal.SecurityIdentifier"));
 
-            Console.WriteLine("Owner identity: " + idOwner);
-            //Console.WriteLine("Group identity: " + idGroup);
+            log.Debug("Owner identity: " + idOwner);
+            //log.Debug("Group identity: " + idGroup);
 
             if ((idOwner != idSystem) && (idOwner != idAdmin))
                 throw new UnauthorizedAccessException("Users should not be owner of the configuration file.");
@@ -96,14 +101,14 @@ namespace GlobalHotKeys
             AuthorizationRuleCollection acl = File.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier"));
             Dictionary<IdentityReference, FileSystemRights> userAllowRights = new Dictionary<IdentityReference,FileSystemRights>();
             Dictionary<IdentityReference, FileSystemRights> userDenyRights = new Dictionary<IdentityReference,FileSystemRights>();
-            
+
             for (int i = 0; i < acl.Count; i++) {
-                Console.WriteLine("Authorization rule type: " + acl[i].GetType());
+                log.Debug("Authorization rule type: " + acl[i].GetType());
                 FileSystemAccessRule ace = acl[i] as FileSystemAccessRule;
                 if (ace != null) {
-                    Console.WriteLine("Access type: " + ace.AccessControlType);
-                    Console.WriteLine("Access mask: " + ace.FileSystemRights);
-                    Console.WriteLine("Identity: " + ace.IdentityReference);
+                    log.Debug("Access type: " + ace.AccessControlType);
+                    log.Debug("Access mask: " + ace.FileSystemRights);
+                    log.Debug("Identity: " + ace.IdentityReference);
                 }
 
                 // If rule is not a FileSystemSecurityRule then it is ignored.
@@ -142,6 +147,7 @@ namespace GlobalHotKeys
                  || ((rights & FileSystemRights.WriteAttributes) != 0)
                  || ((rights & FileSystemRights.WriteExtendedAttributes) != 0)
                  || ((rights & FileSystemRights.ChangePermissions) != 0)
+                 || ((rights & FileSystemRights.Delete) != 0)
                  || ((rights & FileSystemRights.TakeOwnership) != 0))
                     throw new UnauthorizedAccessException("Users should not be able to modify the config file.");
             }

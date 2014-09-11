@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using log4net;
 
 namespace GlobalHotKeys
 {
@@ -8,6 +9,8 @@ namespace GlobalHotKeys
     {
         class Manager
         {
+            static private readonly ILog log = LogManager.GetLogger(typeof(Manager));
+
             static public List<string> AuthorizedMethods
             {
                 get
@@ -25,7 +28,7 @@ namespace GlobalHotKeys
                 if (args.Count == 1)
                     when = int.Parse(args[0]);
 
-                Console.WriteLine("Called Power.Manager.shutdown({0})", when);
+                log.InfoFormat("Called Power.Manager.shutdown({0})", when);
 
                 Process.Start("shutdown", "/s /t " + when);
             }
@@ -39,7 +42,7 @@ namespace GlobalHotKeys
                 if (args.Count == 1)
                     when = int.Parse(args[0]);
 
-                Console.WriteLine("Called Power.Manager.reboot({0})", when);
+                log.InfoFormat("Called Power.Manager.reboot({0})", when);
 
                 Process.Start("shutdown", "/r /t " + when);
             }
@@ -49,7 +52,7 @@ namespace GlobalHotKeys
                 if (args.Count != 0)
                     throw new Shortcuts.BadArgumentCountException("logOff() admits no argument", 0);
 
-                Console.WriteLine("Called Power.Manager.logOff()");
+                log.InfoFormat("Called Power.Manager.logOff()");
 
                 Process.Start("shutdown", "/l");
             }
@@ -59,7 +62,7 @@ namespace GlobalHotKeys
                 if (args.Count != 0)
                     throw new Shortcuts.BadArgumentCountException("lockScreen() admits no arguments", 0);
 
-                Console.WriteLine("Called Power.Manager.lockScreen()");
+                log.InfoFormat("Called Power.Manager.lockScreen()");
 
                 User32.LockWorkStation();
             }

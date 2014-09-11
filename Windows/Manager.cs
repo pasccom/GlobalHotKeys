@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Diagnostics;
+using log4net;
 
 namespace GlobalHotKeys
 {
@@ -10,6 +11,8 @@ namespace GlobalHotKeys
     {
         class Manager
         {
+            static private readonly ILog log = LogManager.GetLogger(typeof(Manager));
+
             static public List<string> AuthorizedMethods
             {
                 get
@@ -32,7 +35,7 @@ namespace GlobalHotKeys
                 if (args.Count >= 3)
                     startPath = args[3];
 
-                Console.WriteLine("Called Windows.Manager.activate(\"{0}\", \"{1}\", \"{2}\")", exePath, title, startPath);
+                log.InfoFormat("Called Windows.Manager.activate(\"{0}\", \"{1}\", \"{2}\", \"{3}\")", sizeFlag, exePath, title, startPath);
 
                 List<Process> processes = findProcesses(exePath);
                 if (processes.Count == 0) {
@@ -46,22 +49,22 @@ namespace GlobalHotKeys
                         // Look for a visible window whose title matches the provided regexp
                         List<IntPtr> windows = findVisibleWindows(processes[0].Threads, title);
                         if (windows.Count == 0)
-                            Console.WriteLine("Warning: No matching windows", windows.Count - 1);
+                            log.Warn("No matching windows");
                         else
                             activate(windows[0], sizeFlag);
 
                         if (windows.Count > 1)
-                            Console.WriteLine("Warning: {0} matching windows ignored", windows.Count - 1);
+                            log.WarnFormat("{0} matching windows ignored", windows.Count - 1);
                     }
                 }
 
                 if (processes.Count > 1)
-                    Console.WriteLine("Warning: {0} matching processes ignored", processes.Count - 1);
+                    log.WarnFormat("{0} matching processes ignored", processes.Count - 1);
             }
 
             static public void focus(List<string> args)
             {
-                if ((args.Count < 2) || (args.Count > 4))
+                if ((args.Count < 2) || (args.Count > 3))
                     throw new Shortcuts.BadArgumentCountException("focus(size, exePath, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
 
                 int sizeFlag = parseSize(args[0]);
@@ -70,11 +73,11 @@ namespace GlobalHotKeys
                 if (args.Count >= 2)
                     title = args[2];
 
-                Console.WriteLine("Called Windows.Manager.focus(\"{0}\", \"{1}\")", exePath, title);
+                log.InfoFormat("Called Windows.Manager.focus(\"{0}\", \"{1}\", \"{2}\")", sizeFlag, exePath, title);
 
                 List<Process> processes = findProcesses(exePath);
                 if (processes.Count == 0) {
-                    Console.WriteLine("Warning: No matching process");
+                    log.Warn("No matching process");
                 } else {
                     if (title == null) {
                         // Use the .NET provided MainWindowHandle (not always good...)
@@ -83,17 +86,17 @@ namespace GlobalHotKeys
                         // Look for a visible window whose title matches the provided regexp
                         List<IntPtr> windows = findVisibleWindows(processes[0].Threads, title);
                         if (windows.Count == 0)
-                            Console.WriteLine("Warning: No matching windows", windows.Count - 1);
+                            log.Warn("No matching windows");
                         else
                             activate(windows[0], sizeFlag);
 
                         if (windows.Count > 1)
-                            Console.WriteLine("Warning: {0} matching windows ignored", windows.Count - 1);
+                            log.WarnFormat("{0} matching windows ignored", windows.Count - 1);
                     }
                 }
 
                 if (processes.Count > 1)
-                    Console.WriteLine("Warning: {0} matching processes ignored", processes.Count - 1);
+                    log.WarnFormat("{0} matching processes ignored", processes.Count - 1);
             }
 
             static public void start(List<string> args)
@@ -106,7 +109,7 @@ namespace GlobalHotKeys
                 if (args.Count >= 2)
                     startPath = args[1];
 
-                Console.WriteLine("Called Windows.Manager.start(\"{0}\")", exePath);
+                log.InfoFormat("Called Windows.Manager.start(\"{0}\", \"{1}\")", exePath, startPath);
 
                 startProcess(exePath, startPath);
             }
@@ -133,7 +136,7 @@ namespace GlobalHotKeys
 
             static private void startProcess(string exePath, string startPath = null)
             {
-                Console.WriteLine("Starting " + exePath);
+                log.Info("Starting process: " + exePath);
 
                 Process process = new Process();
                 process.StartInfo.FileName = exePath;

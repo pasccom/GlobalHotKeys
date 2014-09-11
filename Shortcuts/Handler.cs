@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using log4net;
 
 using GlobalHotkeys.Shortcuts;
 
@@ -10,6 +11,8 @@ namespace GlobalHotKeys
     {
         class Handler
         {
+            static private readonly ILog log = LogManager.GetLogger(typeof(Handler));
+
             private List<Shortcut> mDefaultShortcutsList;
             private List<Shortcut> mCurrentShortcutsList;
             private static Handler sInstance;
@@ -90,7 +93,7 @@ namespace GlobalHotKeys
                 ConfigProvider config = getConfigProvider(path);
                 config.NewShortcutEvent += (Shortcut shortcut) =>
                 {
-                    Console.WriteLine("New shortcut: " + shortcut);
+                    log.Info("New shortcut: " + shortcut);
                     mCurrentShortcutsList.Add(shortcut);
                 };
                 config.parseConfig();
@@ -112,7 +115,7 @@ namespace GlobalHotKeys
             {
                 config.NewShortcutEvent += (Shortcut shortcut) =>
                 {
-                    Console.WriteLine("New shortcut: " + shortcut);
+                    log.Info("New shortcut: " + shortcut);
                     mDefaultShortcutsList.Add(shortcut);
                 };
                 config.parseConfig();
@@ -123,7 +126,7 @@ namespace GlobalHotKeys
                 User32.MSG msg;
                 while (User32.GetMessage(out msg, IntPtr.Zero, User32.WM_HOTKEY, User32.WM_HOTKEY)) {
                     if (msg.message != User32.WM_HOTKEY) {
-                        Console.WriteLine("Unhandled message received: " + msg.message);
+                        log.Warn("Unhandled message received: " + msg.message);
                         continue;
                     }
 
@@ -138,11 +141,11 @@ namespace GlobalHotKeys
                     } else if ((Environment.Version.Major == 4) && (Environment.Version.Minor == 0)) {
                         id = (int)((long)msg.wParam.ToUInt64());
                     } else {
-                        Console.WriteLine("Your version of the frameWork (" + Environment.Version + ") is not supported. Exiting.");
+                        log.ErrorFormat("Your version of the frameWork ({0}) is not supported. Exiting.", Environment.Version);
                         return;
                     }
 
-                    Console.WriteLine("Got hotkey: id=" + id);
+                    log.Debug("Got hotkey: id=" + id);
 
                     // Handles exit special shortcut
                     if (id == -1)
@@ -154,7 +157,7 @@ namespace GlobalHotKeys
                         if (id <= mCurrentShortcutsList.Count)
                             callShortcut(mCurrentShortcutsList[id - 1]);
                         else
-                            Console.WriteLine("Got bad shortcut id: " + id);
+                            log.Warn("Got bad shortcut id: " + id);
                     }
                 }
             }
@@ -178,8 +181,8 @@ namespace GlobalHotKeys
                         null,
                         null,
                         null
-                     ) as List<string>;
-                    Console.WriteLine("Authorized methods are: " + String.Join<string>(",", authorizedMethods));
+                    ) as List<string>;
+                    log.Debug("Authorized methods are: " + String.Join<string>(",", authorizedMethods));
                 } catch (Exception e) {
                     throw new UnauthorizedShortcutException("Could not find the static public property AuthorizedMethods in specified class: " + shortcut.Class, shortcut, e);
                 }
@@ -196,7 +199,7 @@ namespace GlobalHotKeys
             {
                 checkShortcut(shortcut);
 
-                Console.WriteLine("Calling {0}", shortcut.action());
+                log.InfoFormat("Calling {0}", shortcut.action());
 
                 // Try to get the singleton:
                 try {
@@ -217,7 +220,7 @@ namespace GlobalHotKeys
                     );
                     return;
                 } catch (TargetInvocationException e) {
-                    Console.WriteLine("Shortcut method failed with exception: " + e.GetBaseException());
+                    log.Error("Shortcut method failed with exception", e.GetBaseException());
                 } catch (Exception) {
                     // Ignore excepetion.
                 }
@@ -233,9 +236,9 @@ namespace GlobalHotKeys
                         new Object[] { shortcut.Params }
                     );
                 } catch (TargetInvocationException e) {
-                    Console.WriteLine("Shortcut method failed with exception: " + e.GetBaseException());
+                    log.Error("Shortcut method failed with exception.", e.GetBaseException());
                 } catch (Exception e) {
-                    Console.WriteLine("Couldn't find the specified method. Exception: " + e);
+                    log.Error("Couldn't find the specified method.", e);
                 }
 
             }
@@ -252,7 +255,7 @@ namespace GlobalHotKeys
 
                 if (!User32.RegisterHotKey(IntPtr.Zero, id, (int)shortcut.Modifier | User32.MOD_NOREPEAT, (int)shortcut.Key))
                     throw new InavalidShortcutException("Couldn't register shortcut (id=" + id + ").", shortcut);
-                Console.WriteLine("Sucessfully registered shortcut (id=" + id + "): " + shortcut);
+                log.Info("Sucessfully registered shortcut (id=" + id + "): " + shortcut);
                 shortcut.Loaded = true;
             }
 
@@ -264,7 +267,7 @@ namespace GlobalHotKeys
                 if (!User32.UnregisterHotKey(IntPtr.Zero, id))
                     throw new InavalidShortcutException("Couldn't unregister shortcut (id=" + id + ").", shortcut);
 
-                Console.WriteLine("Sucessfully unregistered shortcut (id=" + id + "): " + shortcut);
+                log.Info("Sucessfully unregistered shortcut (id=" + id + "): " + shortcut);
                 shortcut.Loaded = false;
             }
 
@@ -276,12 +279,12 @@ namespace GlobalHotKeys
                             loadShortcut(mCurrentShortcutsList[i], i + 1);
                             i++;
                         } catch (InavalidShortcutException e) {
-                            Console.WriteLine("Invalid shortcut ignored: " + e.InvalidShortcut);
+                            log.Warn("Invalid shortcut ignored: " + e.InvalidShortcut);
                             mCurrentShortcutsList.RemoveAt(i);
                         }
                     }
                 } catch (UnauthorizedShortcutException e) {
-                    Console.WriteLine("Unauthorized shortcut : " + e.UnauthorizedShortcut + ". Clearing all shortcuts.");
+                    log.Error("Unauthorized shortcut : " + e.UnauthorizedShortcut + ". Clearing all shortcuts.", e);
                     unloadShortcuts();
                     mCurrentShortcutsList = new List<Shortcut>();
                 }
@@ -294,7 +297,7 @@ namespace GlobalHotKeys
                         unloadShortcut(mCurrentShortcutsList[i], i + 1);
                         i++;
                     } catch (InavalidShortcutException e) {
-                        Console.WriteLine("Invalid shortcut ignored: " + e.InvalidShortcut);
+                        log.Warn("Invalid shortcut ignored: " + e.InvalidShortcut);
                     }
                 }
             }
