@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace GlobalHotKeys
 {
-    class Shortcut
+    class ShortcutData
     {
         /// <summary>
         ///     Enumeration of all supported modifiers.
@@ -59,21 +59,21 @@ namespace GlobalHotKeys
 
         public bool Loaded { get; set; }
 
-        public static Shortcut exitShortcut = new Shortcut() {
+        public static ShortcutData exitShortcut = new ShortcutData() {
             Modifier = Modifiers.ALT | Modifiers.CTRL,
             Key = Keys.C,
             Class = "Shortcuts.Handler",
             Method = "exit",
         };
 
-        public static Shortcut resetShortcut = new Shortcut() {
+        public static ShortcutData resetShortcut = new ShortcutData() {
             Modifier = Modifiers.ALT | Modifiers.CTRL,
             Key = Keys.Esc,
             Class = "Shortcuts.Handler",
             Method = "reset",
         };
 
-        public Shortcut()
+        public ShortcutData()
         {
             Key = Keys.None;
             Loaded = false;
@@ -112,10 +112,10 @@ namespace GlobalHotKeys
         public bool isSpecial()
         {
             // Signals CTRL + ALT + Escape reserved shortcut (reset):
-            if ((Modifier == (Shortcut.Modifiers.ALT | Shortcut.Modifiers.CTRL)) && (Key == Shortcut.Keys.Esc))
+            if ((Modifier == (ShortcutData.Modifiers.ALT | ShortcutData.Modifiers.CTRL)) && (Key == ShortcutData.Keys.Esc))
                 return true;
             // Prevents the user to load CTRL + ALT + C reserved shortcut (exit):
-            if ((Modifier == (Shortcut.Modifiers.ALT | Shortcut.Modifiers.CTRL)) && (Key == Shortcut.Keys.C))
+            if ((Modifier == (ShortcutData.Modifiers.ALT | ShortcutData.Modifiers.CTRL)) && (Key == ShortcutData.Keys.C))
                 return true;
 
             return false;
@@ -137,7 +137,7 @@ namespace GlobalHotKeys
 
         public string keyCombination()
         {
-            Shortcut.Modifiers[] modifiers = { Shortcut.Modifiers.ALT, Shortcut.Modifiers.CTRL, Shortcut.Modifiers.SHIFT, Shortcut.Modifiers.META };
+            ShortcutData.Modifiers[] modifiers = { ShortcutData.Modifiers.ALT, ShortcutData.Modifiers.CTRL, ShortcutData.Modifiers.SHIFT, ShortcutData.Modifiers.META };
             string ret = String.Empty;
 
             for (int i = 0; i < modifiers.Length; i++)

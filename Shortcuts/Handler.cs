@@ -13,8 +13,8 @@ namespace GlobalHotKeys
         {
             static private readonly ILog log = LogManager.GetLogger(typeof(Handler));
 
-            private List<Shortcut> mDefaultShortcutsList;
-            private List<Shortcut> mCurrentShortcutsList;
+            private List<ShortcutData> mDefaultShortcutsList;
+            private List<ShortcutData> mCurrentShortcutsList;
             private static Handler sInstance;
 
             static public List<string> AuthorizedMethods
@@ -51,10 +51,10 @@ namespace GlobalHotKeys
 
             private Handler(ConfigProvider config)
             {
-                loadShortcut(Shortcut.exitShortcut, -1, false);
-                loadShortcut(Shortcut.resetShortcut, -2, false);
+                loadShortcut(ShortcutData.exitShortcut, -1, false);
+                loadShortcut(ShortcutData.resetShortcut, -2, false);
 
-                mDefaultShortcutsList = new List<Shortcut>();
+                mDefaultShortcutsList = new List<ShortcutData>();
                 setDefaultConfig(config);
 
                 mCurrentShortcutsList = mDefaultShortcutsList;
@@ -65,8 +65,8 @@ namespace GlobalHotKeys
             {
                 unloadShortcuts();
 
-                unloadShortcut(Shortcut.exitShortcut, -1);
-                unloadShortcut(Shortcut.resetShortcut, -2);
+                unloadShortcut(ShortcutData.exitShortcut, -1);
+                unloadShortcut(ShortcutData.resetShortcut, -2);
             }
 
             public void resetShortcuts(List<string> args)
@@ -88,10 +88,10 @@ namespace GlobalHotKeys
 
                 unloadShortcuts();
 
-                mCurrentShortcutsList = new List<Shortcut>();
+                mCurrentShortcutsList = new List<ShortcutData>();
 
                 ConfigProvider config = getConfigProvider(path);
-                config.NewShortcutEvent += (Shortcut shortcut) =>
+                config.NewShortcutEvent += (ShortcutData shortcut) =>
                 {
                     log.Info("New shortcut: " + shortcut);
                     mCurrentShortcutsList.Add(shortcut);
@@ -113,7 +113,7 @@ namespace GlobalHotKeys
 
             private void setDefaultConfig(ConfigProvider config)
             {
-                config.NewShortcutEvent += (Shortcut shortcut) =>
+                config.NewShortcutEvent += (ShortcutData shortcut) =>
                 {
                     log.Info("New shortcut: " + shortcut);
                     mDefaultShortcutsList.Add(shortcut);
@@ -162,7 +162,7 @@ namespace GlobalHotKeys
                 }
             }
 
-            private void checkShortcut(Shortcut shortcut)
+            private void checkShortcut(ShortcutData shortcut)
             {
                 // Check that shortcut is valid:
                 if (!shortcut.isValid())
@@ -195,7 +195,7 @@ namespace GlobalHotKeys
                     throw new UnauthorizedShortcutException("Not authorized method: " + shortcut.Method, shortcut);
             }
 
-            private void callShortcut(Shortcut shortcut)
+            private void callShortcut(ShortcutData shortcut)
             {
                 checkShortcut(shortcut);
 
@@ -243,7 +243,7 @@ namespace GlobalHotKeys
 
             }
 
-            private void loadShortcut(Shortcut shortcut, int id, bool userDefined = true)
+            private void loadShortcut(ShortcutData shortcut, int id, bool userDefined = true)
             {
                 if (userDefined && shortcut.isSpecial())
                     throw new InavalidShortcutException(shortcut.keyCombination() + " is a reserved shortcut", shortcut);
@@ -259,7 +259,7 @@ namespace GlobalHotKeys
                 shortcut.Loaded = true;
             }
 
-            private void unloadShortcut(Shortcut shortcut, int id)
+            private void unloadShortcut(ShortcutData shortcut, int id)
             {
                 if (!shortcut.Loaded)
                     return;
@@ -286,7 +286,7 @@ namespace GlobalHotKeys
                 } catch (UnauthorizedShortcutException e) {
                     log.Error("Unauthorized shortcut : " + e.UnauthorizedShortcut + ". Clearing all shortcuts.", e);
                     unloadShortcuts();
-                    mCurrentShortcutsList = new List<Shortcut>();
+                    mCurrentShortcutsList = new List<ShortcutData>();
                 }
             }
 

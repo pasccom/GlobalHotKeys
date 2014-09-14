@@ -6,7 +6,7 @@ namespace GlobalHotKeys
     {
         class UnauthorizedShortcutException : ApplicationException
         {
-            public Shortcut UnauthorizedShortcut { get; set; }
+            public ShortcutData UnauthorizedShortcut { get; set; }
 
             public UnauthorizedShortcutException() :
                 base() { }
@@ -14,17 +14,17 @@ namespace GlobalHotKeys
                 base(msg) { }
             public UnauthorizedShortcutException(string msg, Exception e) :
                 base(msg, e) { }
-            public UnauthorizedShortcutException(Shortcut shortcut) :
+            public UnauthorizedShortcutException(ShortcutData shortcut) :
                 base()
             {
                 UnauthorizedShortcut = shortcut;
             }
-            public UnauthorizedShortcutException(string msg, Shortcut shortcut) :
+            public UnauthorizedShortcutException(string msg, ShortcutData shortcut) :
                 base(msg)
             {
                 UnauthorizedShortcut = shortcut;
             }
-            public UnauthorizedShortcutException(string msg, Shortcut shortcut, Exception e) :
+            public UnauthorizedShortcutException(string msg, ShortcutData shortcut, Exception e) :
                 base(msg, e)
             {
                 UnauthorizedShortcut = shortcut;

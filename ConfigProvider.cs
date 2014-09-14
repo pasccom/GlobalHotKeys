@@ -4,10 +4,10 @@ namespace GlobalHotKeys
 {
     abstract class ConfigProvider
     {
-        public delegate void ShortcutHandler(Shortcut shortcut);
+        public delegate void ShortcutHandler(ShortcutData shortcut);
         public event ShortcutHandler NewShortcutEvent;
 
-        protected void newShortcut(Shortcut shortcut)
+        protected void newShortcut(ShortcutData shortcut)
         {
             NewShortcutEvent(shortcut);
         }

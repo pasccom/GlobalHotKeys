@@ -48,7 +48,7 @@ namespace GlobalHotKeys
                     continue;
                 }
 
-                Shortcut shortcut = new Shortcut();
+                ShortcutData shortcut = new ShortcutData();
 
                 try {
                     parseModifiers(shortcut, line);
@@ -83,7 +83,7 @@ namespace GlobalHotKeys
             if (!File.Exists(path))
                 throw new FileNotFoundException("Could not find config file", path);
 
-            IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+            /*IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
             IdentityReference idAdmin = new NTAccount("Administrateurs").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
 
             log.Debug("Systeme identity: " + idSystem);
@@ -100,9 +100,9 @@ namespace GlobalHotKeys
 
             AuthorizationRuleCollection acl = File.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier"));
             Dictionary<IdentityReference, FileSystemRights> userAllowRights = new Dictionary<IdentityReference,FileSystemRights>();
-            Dictionary<IdentityReference, FileSystemRights> userDenyRights = new Dictionary<IdentityReference,FileSystemRights>();
+            Dictionary<IdentityReference, FileSystemRights> userDenyRights = new Dictionary<IdentityReference,FileSystemRights>();*/
 
-            for (int i = 0; i < acl.Count; i++) {
+            /*for (int i = 0; i < acl.Count; i++) {
                 log.Debug("Authorization rule type: " + acl[i].GetType());
                 FileSystemAccessRule ace = acl[i] as FileSystemAccessRule;
                 if (ace != null) {
@@ -127,9 +127,9 @@ namespace GlobalHotKeys
                         userDenyRights.Add(ace.IdentityReference, 0);
                     userDenyRights[ace.IdentityReference] |= ace.FileSystemRights;
                 }
-            }
+            }*/
 
-            foreach (KeyValuePair<IdentityReference, FileSystemRights> keyval in userAllowRights) {
+            /*foreach (KeyValuePair<IdentityReference, FileSystemRights> keyval in userAllowRights) {
                 // System and Admin user can do what they want.
                 if (keyval.Key == idSystem)
                     continue;
@@ -150,12 +150,12 @@ namespace GlobalHotKeys
                  || ((rights & FileSystemRights.Delete) != 0)
                  || ((rights & FileSystemRights.TakeOwnership) != 0))
                     throw new UnauthorizedAccessException("Users should not be able to modify the config file.");
-            }
+            }*/
         }
 
-        private void parseModifiers(Shortcut shortcut, string line)
+        private void parseModifiers(ShortcutData shortcut, string line)
         {
-            Shortcut.Modifiers[] modifiers = { Shortcut.Modifiers.ALT, Shortcut.Modifiers.CTRL, Shortcut.Modifiers.SHIFT, Shortcut.Modifiers.META };
+            ShortcutData.Modifiers[] modifiers = { ShortcutData.Modifiers.ALT, ShortcutData.Modifiers.CTRL, ShortcutData.Modifiers.SHIFT, ShortcutData.Modifiers.META };
 
             // Line is too short to hold modifiers:
             if (line.Length < 8)
@@ -187,7 +187,7 @@ namespace GlobalHotKeys
             return line.Substring(b, i - b);
         }
 
-        private void parseParameters(Shortcut shortcut, string line, int i)
+        private void parseParameters(ShortcutData shortcut, string line, int i)
         {
             while (i < line.Length) {
                 string param = nextParameterToken(line, ref i);
