@@ -30,12 +30,12 @@ namespace GlobalHotKeys
                 string exePath = args[1];
                 string title = null;
                 string startPath = null;
-                if (args.Count >= 2)
-                    title = args[2];
                 if (args.Count >= 3)
+                    title = args[2];
+                if (args.Count >= 4)
                     startPath = args[3];
 
-                log.InfoFormat("Called Windows.Manager.activate(\"{0}\", \"{1}\", \"{2}\", \"{3}\")", sizeFlag, exePath, title, startPath);
+                log.InfoFormat("Called Windows.Manager.activate({0}, \"{1}\", \"{2}\", \"{3}\")", sizeFlag, exePath, title, startPath);
 
                 List<Process> processes = findProcesses(exePath);
                 if (processes.Count == 0) {
@@ -70,10 +70,10 @@ namespace GlobalHotKeys
                 int sizeFlag = parseSize(args[0]);
                 string exePath = args[1];
                 string title = null;
-                if (args.Count >= 2)
+                if (args.Count >= 3)
                     title = args[2];
 
-                log.InfoFormat("Called Windows.Manager.focus(\"{0}\", \"{1}\", \"{2}\")", sizeFlag, exePath, title);
+                log.InfoFormat("Called Windows.Manager.focus({0}, \"{1}\", \"{2}\")", sizeFlag, exePath, title);
 
                 List<Process> processes = findProcesses(exePath);
                 if (processes.Count == 0) {
