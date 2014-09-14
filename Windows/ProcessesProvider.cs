@@ -16,7 +16,7 @@ namespace GlobalHotKeys
             {
                 mProcesses = new Dictionary<string, ProcessData>();
             }
-           
+
             protected void newProcess(string name, ProcessData process)
             {
                 log.Info("Added new process: " + name);
@@ -25,13 +25,21 @@ namespace GlobalHotKeys
                 log.Debug("\t-Real executable path: " + process.StartPath);
                 log.Debug("\t-Arguments: " + String.Join<string>(", ", process.StartArguments));
 
-                try{
+                try {
                     mProcesses.Add(name, process);
-                } catch(ArgumentException e) {
+                } catch (ArgumentException) {
                     log.WarnFormat("A key with the same name (\"{0}\") already exists. It will be overwritten.", name);
                     mProcesses.Remove(name);
                     mProcesses.Add(name, process);
                 }
+            }
+
+            public ProcessData this[string name] 
+            { 
+                get 
+                { 
+                    return getProcess(name); 
+                } 
             }
 
             public ProcessData getProcess(string name)
