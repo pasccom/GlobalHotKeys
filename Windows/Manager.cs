@@ -11,7 +11,18 @@ namespace GlobalHotKeys
     {
         class Manager
         {
+            static private ProcessesProvider mProcessessList;
+
             static private readonly ILog log = LogManager.GetLogger(typeof(Manager));
+            static public ProcessesProvider ProcessessList
+            {
+                set
+                {
+                    if (value != null)
+                        value.parseConfig();
+                    mProcessessList = value;
+                }
+            }
 
             static public List<string> AuthorizedMethods
             {
@@ -23,24 +34,23 @@ namespace GlobalHotKeys
 
             static public void activate(List<string> args)
             {
-                if ((args.Count < 2) || (args.Count > 4))
-                    throw new Shortcuts.BadArgumentCountException("activate(size, exePath, [title, [startPath]]) needs 2 arguments at least and admits 2 optional arguments.", 2, 4);
+                if ((args.Count < 2) || (args.Count > 3))
+                    throw new Shortcuts.BadArgumentCountException("activate(size, processName, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
 
                 int sizeFlag = parseSize(args[0]);
-                string exePath = args[1];
+                string processName = args[1];
                 string title = null;
-                string startPath = null;
                 if (args.Count >= 3)
                     title = args[2];
-                if (args.Count >= 4)
-                    startPath = args[3];
+                
+                log.InfoFormat("Called Windows.Manager.activate({0}, \"{1}\", \"{2}\")", sizeFlag, processName, title);
 
-                log.InfoFormat("Called Windows.Manager.activate({0}, \"{1}\", \"{2}\", \"{3}\")", sizeFlag, exePath, title, startPath);
+                ProcessData process = mProcessessList[processName];
 
-                List<Process> processes = findProcesses(exePath);
+                List<Process> processes = findProcesses(process.ExePath);
                 if (processes.Count == 0) {
                     // Start process
-                    startProcess(exePath, startPath);
+                    startProcess(process.StartPath, process.StartFolder);
                 } else {
                     if (title == null) {
                         // Use the .NET provided MainWindowHandle (not always good...)
@@ -65,17 +75,19 @@ namespace GlobalHotKeys
             static public void focus(List<string> args)
             {
                 if ((args.Count < 2) || (args.Count > 3))
-                    throw new Shortcuts.BadArgumentCountException("focus(size, exePath, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
+                    throw new Shortcuts.BadArgumentCountException("focus(size, processName, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
 
                 int sizeFlag = parseSize(args[0]);
-                string exePath = args[1];
+                string processName = args[1];
                 string title = null;
                 if (args.Count >= 3)
                     title = args[2];
 
-                log.InfoFormat("Called Windows.Manager.focus({0}, \"{1}\", \"{2}\")", sizeFlag, exePath, title);
+                log.InfoFormat("Called Windows.Manager.focus({0}, \"{1}\", \"{2}\")", sizeFlag, processName, title);
 
-                List<Process> processes = findProcesses(exePath);
+                ProcessData process = mProcessessList[processName];
+
+                List<Process> processes = findProcesses(process.ExePath);
                 if (processes.Count == 0) {
                     log.Warn("No matching process");
                 } else {
@@ -102,16 +114,14 @@ namespace GlobalHotKeys
             static public void start(List<string> args)
             {
                 if (args.Count != 1)
-                    throw new Shortcuts.BadArgumentCountException("start(exePath, [startPath]) needs 1 argument and admits 1 optional argument.", 1, 2);
+                    throw new Shortcuts.BadArgumentCountException("start(processName) needs 1 argument.", 1, 1);
 
-                string exePath = args[0];
-                string startPath = null;
-                if (args.Count >= 2)
-                    startPath = args[1];
+                string processName = args[0];
 
-                log.InfoFormat("Called Windows.Manager.start(\"{0}\", \"{1}\")", exePath, startPath);
+                log.InfoFormat("Called Windows.Manager.start(\"{0}\")", processName);
 
-                startProcess(exePath, startPath);
+                ProcessData process = mProcessessList[processName];
+                startProcess(process.StartPath, process.StartFolder);
             }
 
             static private int parseSize(String sizeName)

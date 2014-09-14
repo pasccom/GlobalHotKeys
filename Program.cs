@@ -13,15 +13,24 @@ namespace GlobalHotKeys
 
         static void Start(string[] args)
         {
-            string path;
+            string configPath;
+            string processesPath;
+
             if (args.Length > 1)
-                path = args[0];
+                configPath = args[0];
             else
-                path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Pascom\GlobalHotKeys\globalhotkeys.conf";
+                configPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Pascom\GlobalHotKeys\globalhotkeys.conf";
 
-            log.Info("Starting GlobalHotKeys with configuration file :" + path);
+            if (args.Length > 2)
+                processesPath = args[1];
+            else
+                processesPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\Pascom\GlobalHotKeys\globalhotkeys.processes.conf";
 
-            Shortcuts.Handler app = Shortcuts.Handler.getInstance(new PlainTextConfig(path));
+            log.Info("Starting GlobalHotKeys with configuration file :" + configPath);
+            log.Info("Starting GlobalHotKeys with process list file :" + processesPath);
+
+            Windows.Manager.ProcessessList = new Windows.PlainTextConfig(processesPath);
+            Shortcuts.Handler app = Shortcuts.Handler.getInstance(new PlainTextConfig(configPath));
             app.exec();
         }
 
