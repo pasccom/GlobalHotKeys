@@ -13,6 +13,9 @@ namespace GlobalHotKeys
         {
             private static readonly ILog log = LogManager.GetLogger(typeof(PlainTextConfig));
 
+            private static readonly IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+            private static readonly IdentityReference idAdmin = new NTAccount("Administrateurs").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+
             private string mFileName;
             public string FileName
             {
@@ -85,31 +88,20 @@ namespace GlobalHotKeys
                 inStream.Close();
             }
 
-            private void checkConfigFile(string path)
+            private void checkUser(IdentityReference idOwner)
             {
-                if (!File.Exists(path))
-                    throw new FileNotFoundException("Could not find config file", path);
-
-                /*IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
-                IdentityReference idAdmin = new NTAccount("Administrateurs").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
-
-                log.Debug("Systeme identity: " + idSystem);
-                log.Debug("Admin identity: " + idAdmin);
-
-                IdentityReference idOwner = File.GetAccessControl(path, AccessControlSections.Owner).GetOwner(Type.GetType("System.Security.Principal.SecurityIdentifier"));
-                //IdentityReference idGroup = File.GetAccessControl(path, AccessControlSections.Group).GetGroup(Type.GetType("System.Security.Principal.SecurityIdentifier"));
-
                 log.Debug("Owner identity: " + idOwner);
-                //log.Debug("Group identity: " + idGroup);
 
-                if ((idOwner != idSystem) && (idOwner != idAdmin))
+                if ((idOwner != idSystem) && (idOwner != idAdmin) && !idOwner.ToString().StartsWith("S-1-5-80"))
                     throw new UnauthorizedAccessException("Users should not be owner of the configuration file.");
+            }
 
-                AuthorizationRuleCollection acl = File.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier"));
-                Dictionary<IdentityReference, FileSystemRights> userAllowRights = new Dictionary<IdentityReference,FileSystemRights>();
-                Dictionary<IdentityReference, FileSystemRights> userDenyRights = new Dictionary<IdentityReference,FileSystemRights>();*/
+            private void checkAcl(AuthorizationRuleCollection acl)
+            {
+                Dictionary<IdentityReference, FileSystemRights> userAllowRights = new Dictionary<IdentityReference, FileSystemRights>();
+                Dictionary<IdentityReference, FileSystemRights> userDenyRights = new Dictionary<IdentityReference, FileSystemRights>();
 
-                /*for (int i = 0; i < acl.Count; i++) {
+                for (int i = 0; i < acl.Count; i++) {
                     log.Debug("Authorization rule type: " + acl[i].GetType());
                     FileSystemAccessRule ace = acl[i] as FileSystemAccessRule;
                     if (ace != null) {
@@ -134,14 +126,15 @@ namespace GlobalHotKeys
                             userDenyRights.Add(ace.IdentityReference, 0);
                         userDenyRights[ace.IdentityReference] |= ace.FileSystemRights;
                     }
-                }*/
+                }
 
-                /*foreach (KeyValuePair<IdentityReference, FileSystemRights> keyval in userAllowRights) {
-                    // System and Admin user can do what they want.
-                    if (keyval.Key == idSystem)
+                foreach (KeyValuePair<IdentityReference, FileSystemRights> keyval in userAllowRights) {
+                    // Authorized users can do whatever they want:
+                    try {
+                        checkUser(keyval.Key);
                         continue;
-                    if (keyval.Key == idAdmin)
-                        continue;
+                    } catch (UnauthorizedAccessException e) {
+                    }
 
                     // Computes real user rights:
                     FileSystemRights rights = keyval.Value;
@@ -157,7 +150,32 @@ namespace GlobalHotKeys
                      || ((rights & FileSystemRights.Delete) != 0)
                      || ((rights & FileSystemRights.TakeOwnership) != 0))
                         throw new UnauthorizedAccessException("Users should not be able to modify the config file.");
-                }*/
+                }
+            }
+
+            private void checkConfigFile(string path)
+            {
+                if (!File.Exists(path))
+                    throw new FileNotFoundException("Could not find config file", path);
+
+                int sep = path.LastIndexOf('\\');
+                if (sep != -1)
+                    checkConfigPath(path.Substring(0, sep));
+
+                checkUser(File.GetAccessControl(path, AccessControlSections.Owner).GetOwner(Type.GetType("System.Security.Principal.SecurityIdentifier")));
+                checkAcl(File.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier")));
+            }
+
+            private void checkConfigPath(string path)
+            {
+                int sep = path.LastIndexOf('\\');
+                if (sep != -1)
+                    checkConfigPath(path.Substring(0, sep));
+                else
+                    return; // This is the drive letter.
+
+                checkUser(Directory.GetAccessControl(path, AccessControlSections.Owner).GetOwner(Type.GetType("System.Security.Principal.SecurityIdentifier")));
+                checkAcl(Directory.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier")));
             }
 
             private string nextToken(string line, ref int i)
