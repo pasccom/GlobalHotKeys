@@ -133,7 +133,7 @@ namespace GlobalHotKeys
                     try {
                         checkUser(keyval.Key);
                         continue;
-                    } catch (UnauthorizedAccessException e) {
+                    } catch (UnauthorizedAccessException) {
                     }
 
                     // Computes real user rights:
