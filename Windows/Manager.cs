@@ -37,7 +37,7 @@ namespace GlobalHotKeys
                 if ((args.Count < 2) || (args.Count > 3))
                     throw new Shortcuts.BadArgumentCountException("activate(size, processName, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
 
-                int sizeFlag = parseSize(args[0]);
+                User32.ShowState sizeFlag = parseSize(args[0]);
                 string processName = args[1];
                 string title = null;
                 if (args.Count >= 3)
@@ -77,7 +77,7 @@ namespace GlobalHotKeys
                 if ((args.Count < 2) || (args.Count > 3))
                     throw new Shortcuts.BadArgumentCountException("focus(size, processName, [title]) needs 2 arguments at least and admits 1 optional argument.", 2, 3);
 
-                int sizeFlag = parseSize(args[0]);
+                User32.ShowState sizeFlag = parseSize(args[0]);
                 string processName = args[1];
                 string title = null;
                 if (args.Count >= 3)
@@ -124,18 +124,21 @@ namespace GlobalHotKeys
                 startProcess(process.StartPath, process.StartFolder);
             }
 
-            static private int parseSize(String sizeName)
+            static private User32.ShowState parseSize(String sizeName)
             {
-                switch (sizeName) {
-                case "ShowMaximized":
-                    return User32.SW_SHOWMAXIMIZED;
-                case "Normal":
-                    return User32.SW_SHOWNORMAL;
-                case "Restore":
-                    return User32.SW_RESTORE;
-                case "Maximize":
-                    return User32.SW_MAXIMIZE;
-                default:
+                bool bad = sizeName.Contains(",");    
+                
+                try {
+                    int.Parse(sizeName);
+                    bad = true;
+                } catch (Exception) {}
+
+                if (bad)
+                    throw new ArgumentException("The size argument should not contain commas or be a number.");
+
+                try {
+                    return (User32.ShowState)Enum.Parse(typeof(User32.ShowState), sizeName);
+                } catch (ArgumentException) {
                     throw new ArgumentException("The size argument should be either \"Default\", \"Normal\", \"Maximize\" or \"ShowMaximized\"");
                 }
             }
@@ -149,21 +152,21 @@ namespace GlobalHotKeys
                 return ((rect.Top == -32000) && (rect.Left == -32000));
             }
 
-            static private void activate(IntPtr winHandle, int sizeFlag)
+            static private void activate(IntPtr winHandle, User32.ShowState sizeFlag)
             {
                 switch(sizeFlag) {
-                case 9:
+                case User32.ShowState.Restore:
                     if (isMiniMized(winHandle))
-                        User32.ShowWindow(winHandle, User32.SW_SHOWNORMAL);
+                        User32.ShowWindow(winHandle, (int) User32.ShowState.Normal);
                     User32.SetForegroundWindow(winHandle);
                     break;
-                case 3:
+                case User32.ShowState.Maximize:
                     if (isMiniMized(winHandle))
-                        User32.ShowWindow(winHandle, User32.SW_SHOWMAXIMIZED);
+                        User32.ShowWindow(winHandle, (int) User32.ShowState.ShowMaximized);
                     User32.SetForegroundWindow(winHandle);
                     break;
                 default:
-                    User32.ShowWindow(winHandle, sizeFlag);
+                    User32.ShowWindow(winHandle, (int) sizeFlag);
                     User32.SetForegroundWindow(winHandle);
                     break;
                 }
