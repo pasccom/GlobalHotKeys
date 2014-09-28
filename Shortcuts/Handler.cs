@@ -292,6 +292,9 @@ namespace GlobalHotKeys
 
             private void unloadShortcuts()
             {
+                if (mCurrentShortcutsList == null)
+                    return;
+
                 for (int i = 0; i < mCurrentShortcutsList.Count; ) {
                     try {
                         unloadShortcut(mCurrentShortcutsList[i], i + 1);
