@@ -8,6 +8,14 @@ namespace GlobalHotKeys
     {
         class User32
         {
+            internal struct Rect
+            {
+                public int Left;
+                public int Top;
+                public int Right;
+                public int Bottom;
+            }
+
             internal static readonly int SW_HIDE = 0; /*!< Hides the window and activates another window. */
             internal static readonly int SW_SHOWNORMAL = 1; /*!< Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when displaying the window for the first time. */
             internal static readonly int SW_SHOWMINIMIZED = 2; /*!< Activates the window and displays it as a minimized window. */
@@ -41,6 +49,9 @@ namespace GlobalHotKeys
 
             [DllImport("user32.dll")]
             internal static extern int GetWindowTextLength(IntPtr winHandle);
+
+            [DllImport("user32.dll")]
+            internal static extern bool GetWindowRect(IntPtr winHandle, out Rect rect);
         }
     }
 }

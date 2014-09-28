@@ -127,21 +127,46 @@ namespace GlobalHotKeys
             static private int parseSize(String sizeName)
             {
                 switch (sizeName) {
-                case "Maximize":
+                case "ShowMaximized":
                     return User32.SW_SHOWMAXIMIZED;
                 case "Normal":
                     return User32.SW_SHOWNORMAL;
-                case "Default":
-                    return User32.SW_SHOWDEFAULT;
+                case "Restore":
+                    return User32.SW_RESTORE;
+                case "Maximize":
+                    return User32.SW_MAXIMIZE;
                 default:
-                    throw new ArgumentException("The size argument should be either \"Default\", \"Normal\" or \"Maximized\"");
+                    throw new ArgumentException("The size argument should be either \"Default\", \"Normal\", \"Maximize\" or \"ShowMaximized\"");
                 }
+            }
+
+            static private bool isMiniMized(IntPtr winHandle)
+            {
+                User32.Rect rect = new User32.Rect();
+                if (!User32.GetWindowRect(winHandle, out rect))
+                    throw new ApplicationException("Method failed"); // TODO improve it!
+
+                return ((rect.Top == -32000) && (rect.Left == -32000));
             }
 
             static private void activate(IntPtr winHandle, int sizeFlag)
             {
-                User32.ShowWindow(winHandle, sizeFlag);
-                User32.SetForegroundWindow(winHandle);
+                switch(sizeFlag) {
+                case 9:
+                    if (isMiniMized(winHandle))
+                        User32.ShowWindow(winHandle, User32.SW_SHOWNORMAL);
+                    User32.SetForegroundWindow(winHandle);
+                    break;
+                case 3:
+                    if (isMiniMized(winHandle))
+                        User32.ShowWindow(winHandle, User32.SW_SHOWMAXIMIZED);
+                    User32.SetForegroundWindow(winHandle);
+                    break;
+                default:
+                    User32.ShowWindow(winHandle, sizeFlag);
+                    User32.SetForegroundWindow(winHandle);
+                    break;
+                }
             }
 
             static private void startProcess(string exePath, string startPath = null)
