@@ -77,8 +77,6 @@ namespace GlobalHotKeys
 
         static void Main(string[] args)
         {
-            log4net.Config.XmlConfigurator.Configure();
-
             int processed = 0;
             bool debuging = false;
             bool quiet = false;
@@ -97,6 +95,13 @@ namespace GlobalHotKeys
                 }
                 processed++;
             }
+
+#if DEBUG
+            log4net.GlobalContext.Properties["LogFilePath"] = System.IO.Path.GetTempPath() + @"\Pascom\GlobalHotKeys\Debug";
+#else
+            log4net.GlobalContext.Properties["LogFilePath"] = System.IO.Path.GetTempPath() + @"\Pascom\GlobalHotKeys\Release";
+#endif
+            log4net.Config.XmlConfigurator.Configure();
 
             if (quiet)
                 setQuiet();
