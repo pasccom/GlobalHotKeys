@@ -75,8 +75,8 @@ namespace GlobalHotKeys
             {
                 unloadShortcuts();
 
-                unloadShortcut(ShortcutData.exitShortcut, -1);
-                unloadShortcut(ShortcutData.resetShortcut, -2);
+                unloadShortcut(ShortcutData.exitShortcut);
+                unloadShortcut(ShortcutData.resetShortcut);
             }
 
             public void resetShortcuts(List<string> args)
@@ -323,15 +323,15 @@ namespace GlobalHotKeys
                 shortcut.Id = id;
             }
 
-            private void unloadShortcut(ShortcutData shortcut, int id)
+            private void unloadShortcut(ShortcutData shortcut)
             {
                 if (shortcut.Id == 0)
                     return;
 
-                if (!User32.UnregisterHotKey(IntPtr.Zero, id))
-                    throw new InavalidShortcutException("Couldn't unregister shortcut (id=" + id + ").", shortcut);
+                if (!User32.UnregisterHotKey(IntPtr.Zero, shortcut.Id))
+                    throw new InavalidShortcutException("Couldn't unregister shortcut (id=" + shortcut.Id + ").", shortcut);
 
-                log.Info("Sucessfully unregistered shortcut (id=" + id + "): " + shortcut);
+                log.Info("Sucessfully unregistered shortcut (id=" + shortcut.Id + "): " + shortcut);
                 shortcut.Id = 0;
             }
 
@@ -361,7 +361,7 @@ namespace GlobalHotKeys
 
                 for (int i = 0; i < mCurrentShortcutsList.Count; ) {
                     try {
-                        unloadShortcut(mCurrentShortcutsList[i], i + 1);
+                        unloadShortcut(mCurrentShortcutsList[i]);
                         i++;
                     } catch (InavalidShortcutException e) {
                         log.Warn("Invalid shortcut ignored: " + e.InvalidShortcut);
