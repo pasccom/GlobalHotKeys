@@ -172,38 +172,58 @@ namespace GlobalHotKeys
                 }
             }
 
-            public List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, SearchScope where = SearchScope.All)
+            public ShortcutData findShortcut(ShortcutData.Modifiers shortcutModifiers, ShortcutData.Keys shortcutKey, SearchScope where = SearchScope.All)
             {
                 if (mCurrentShortcutsList == mDefaultShortcutsList)
-                    return mCurrentShortcutsList.FindAll((ShortcutData shortcut) =>
-                    {
-                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
-                    }); 
+                    return findShortcut(shortcutModifiers, shortcutKey, mCurrentShortcutsList);
 
                 switch (where) {
                 case SearchScope.AllCurrentFirst:
-                    return mCurrentShortcutsList.Concat(mDefaultShortcutsList).ToList().FindAll((ShortcutData shortcut) =>
-                    {
-                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
-                    });
+                    return findShortcut(shortcutModifiers, shortcutKey, mCurrentShortcutsList.Concat(mDefaultShortcutsList).ToList());
                 case SearchScope.AllDefaultFirst:
-                    return mDefaultShortcutsList.Concat(mCurrentShortcutsList).ToList().FindAll((ShortcutData shortcut) =>
-                    {
-                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
-                    });
+                    return findShortcut(shortcutModifiers, shortcutKey, mDefaultShortcutsList.Concat(mCurrentShortcutsList).ToList());
                 case SearchScope.Current:
-                    return mCurrentShortcutsList.FindAll((ShortcutData shortcut) =>
-                    {
-                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
-                    });
+                    return findShortcut(shortcutModifiers, shortcutKey, mCurrentShortcutsList);
                 case SearchScope.Default:
-                    return mDefaultShortcutsList.FindAll((ShortcutData shortcut) =>
-                    {
-                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
-                    });
+                    return findShortcut(shortcutModifiers, shortcutKey, mDefaultShortcutsList);
                 default:
                     throw new ArgumentException("Bad value for search scope: " + where);
                 }
+            }
+
+            public List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, SearchScope where = SearchScope.All)
+            {
+                if (mCurrentShortcutsList == mDefaultShortcutsList)
+                    return findAllShortcuts(shortcutClass, shortcutMethod, mCurrentShortcutsList);
+
+                switch (where) {
+                case SearchScope.AllCurrentFirst:
+                    return findAllShortcuts(shortcutClass, shortcutMethod, mCurrentShortcutsList.Concat(mDefaultShortcutsList).ToList());
+                case SearchScope.AllDefaultFirst:
+                    return findAllShortcuts(shortcutClass, shortcutMethod, mDefaultShortcutsList.Concat(mCurrentShortcutsList).ToList());
+                case SearchScope.Current:
+                    return findAllShortcuts(shortcutClass, shortcutMethod, mCurrentShortcutsList);
+                case SearchScope.Default:
+                    return findAllShortcuts(shortcutClass, shortcutMethod, mDefaultShortcutsList);
+                default:
+                    throw new ArgumentException("Bad value for search scope: " + where);
+                }
+            }
+
+            private ShortcutData findShortcut(ShortcutData.Modifiers shortcutModifiers, ShortcutData.Keys shortcutKey, List<ShortcutData> where)
+            {
+                return where.Find((ShortcutData shortcut) =>
+                {
+                    return ((shortcut.Modifier == shortcutModifiers) && (shortcut.Key == shortcutKey));
+                });
+            }
+
+            private List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, List<ShortcutData> where)
+            {
+                return where.FindAll((ShortcutData shortcut) =>
+                {
+                    return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
+                });
             }
 
             private void checkShortcut(ShortcutData shortcut)
