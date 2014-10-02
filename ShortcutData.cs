@@ -57,7 +57,7 @@ namespace GlobalHotKeys
         public string Method { get; set; }
         public List<string> Params { get; set; }
 
-        public bool Loaded { get; set; }
+        public int Id { get; set; }
 
         public static ShortcutData exitShortcut = new ShortcutData() {
             Modifier = Modifiers.ALT | Modifiers.CTRL,
@@ -76,7 +76,7 @@ namespace GlobalHotKeys
         public ShortcutData()
         {
             Key = Keys.None;
-            Loaded = false;
+            Id = 0;
             Params = new List<string>();
         }
 

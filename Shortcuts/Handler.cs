@@ -314,25 +314,25 @@ namespace GlobalHotKeys
 
                 checkShortcut(shortcut);
 
-                if (shortcut.Loaded)
+                if (shortcut.Id != 0)
                     return;
 
                 if (!User32.RegisterHotKey(IntPtr.Zero, id, (int)shortcut.Modifier | User32.MOD_NOREPEAT, (int)shortcut.Key))
                     throw new InavalidShortcutException("Couldn't register shortcut (id=" + id + ").", shortcut);
                 log.Info("Sucessfully registered shortcut (id=" + id + "): " + shortcut);
-                shortcut.Loaded = true;
+                shortcut.Id = id;
             }
 
             private void unloadShortcut(ShortcutData shortcut, int id)
             {
-                if (!shortcut.Loaded)
+                if (shortcut.Id == 0)
                     return;
 
                 if (!User32.UnregisterHotKey(IntPtr.Zero, id))
                     throw new InavalidShortcutException("Couldn't unregister shortcut (id=" + id + ").", shortcut);
 
                 log.Info("Sucessfully unregistered shortcut (id=" + id + "): " + shortcut);
-                shortcut.Loaded = false;
+                shortcut.Id = 0;
             }
 
             private void loadShortcuts()
