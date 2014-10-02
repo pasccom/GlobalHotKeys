@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using log4net;
 
@@ -16,6 +17,15 @@ namespace GlobalHotKeys
             private List<ShortcutData> mDefaultShortcutsList;
             private List<ShortcutData> mCurrentShortcutsList;
             private static Handler sInstance;
+
+            public enum SearchScope
+            {
+                All,
+                AllCurrentFirst = All,
+                AllDefaultFirst,
+                Current,
+                Default
+            }
 
             static public List<string> AuthorizedMethods
             {
@@ -159,6 +169,40 @@ namespace GlobalHotKeys
                         else
                             log.Warn("Got bad shortcut id: " + id);
                     }
+                }
+            }
+
+            public List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, SearchScope where = SearchScope.All)
+            {
+                if (mCurrentShortcutsList == mDefaultShortcutsList)
+                    return mCurrentShortcutsList.FindAll((ShortcutData shortcut) =>
+                    {
+                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
+                    }); 
+
+                switch (where) {
+                case SearchScope.AllCurrentFirst:
+                    return mCurrentShortcutsList.Concat(mDefaultShortcutsList).ToList().FindAll((ShortcutData shortcut) =>
+                    {
+                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
+                    });
+                case SearchScope.AllDefaultFirst:
+                    return mDefaultShortcutsList.Concat(mCurrentShortcutsList).ToList().FindAll((ShortcutData shortcut) =>
+                    {
+                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
+                    });
+                case SearchScope.Current:
+                    return mCurrentShortcutsList.FindAll((ShortcutData shortcut) =>
+                    {
+                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
+                    });
+                case SearchScope.Default:
+                    return mDefaultShortcutsList.FindAll((ShortcutData shortcut) =>
+                    {
+                        return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
+                    });
+                default:
+                    throw new ArgumentException("Bad value for search scope: " + where);
                 }
             }
 
