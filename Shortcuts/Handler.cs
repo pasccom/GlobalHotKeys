@@ -230,12 +230,12 @@ namespace GlobalHotKeys
             {
                 // Check that shortcut is valid:
                 if (!shortcut.isValid())
-                    throw new InavalidShortcutException("Loading an invalid shortcut is forbidden", shortcut);
+                    throw new InvalidShortcutException("Loading an invalid shortcut is forbidden", shortcut);
 
                 // Gets the method class :
                 Type providerClass = Type.GetType("GlobalHotKeys." + shortcut.Class);
                 if (providerClass == null)
-                    throw new InavalidShortcutException("Couldn't find the specified class: " + shortcut.Class, shortcut);
+                    throw new InvalidShortcutException("Couldn't find the specified class: " + shortcut.Class, shortcut);
                 // Gets the list of authorized methods:
                 List<string> authorizedMethods;
                 try {
@@ -323,7 +323,7 @@ namespace GlobalHotKeys
                 int s = findShortcutId(shortcut);
 
                 if (s > mCurrentShortcutsList.Count)
-                    throw new InavalidShortcutException("Shortcut is not currently loaded.", shortcut);
+                    throw new InvalidShortcutException("Shortcut is not currently loaded.", shortcut);
 
                 unloadShortcut(mCurrentShortcutsList[s - 1]);
                 mCurrentShortcutsList.RemoveAt(s - 1);
@@ -334,7 +334,7 @@ namespace GlobalHotKeys
                 int s = findShortcutId(oldShortcut);
 
                 if (s > mCurrentShortcutsList.Count)
-                    throw new InavalidShortcutException("Shortcut is not currently loaded.", oldShortcut);
+                    throw new InvalidShortcutException("Shortcut is not currently loaded.", oldShortcut);
 
                 unloadShortcut(mCurrentShortcutsList[s - 1]);
                 mCurrentShortcutsList.RemoveAt(s - 1);
@@ -349,7 +349,7 @@ namespace GlobalHotKeys
                 int s = findShortcutId(shortcut);
 
                 if (s > mCurrentShortcutsList.Count)
-                    throw new InavalidShortcutException("Shortcut is not currently loaded.", shortcut);
+                    throw new InvalidShortcutException("Shortcut is not currently loaded.", shortcut);
 
                 loadShortcut(mCurrentShortcutsList[s - 1], s, true);
             }
@@ -359,7 +359,7 @@ namespace GlobalHotKeys
                 int s = findShortcutId(shortcut);
 
                 if (s > mCurrentShortcutsList.Count)
-                    throw new InavalidShortcutException("Shortcut is not currently loaded.", shortcut);
+                    throw new InvalidShortcutException("Shortcut is not currently loaded.", shortcut);
 
                 unloadShortcut(mCurrentShortcutsList[s - 1]);
             }
@@ -377,7 +377,7 @@ namespace GlobalHotKeys
             private void loadShortcut(ShortcutData shortcut, int id, bool userDefined = true)
             {
                 if (userDefined && shortcut.isSpecial())
-                    throw new InavalidShortcutException(shortcut.keyCombination() + " is a reserved shortcut", shortcut);
+                    throw new InvalidShortcutException(shortcut.keyCombination() + " is a reserved shortcut", shortcut);
 
                 checkShortcut(shortcut);
 
@@ -385,7 +385,7 @@ namespace GlobalHotKeys
                     return;
 
                 if (!User32.RegisterHotKey(IntPtr.Zero, id, (int)shortcut.Modifier | User32.MOD_NOREPEAT, (int)shortcut.Key))
-                    throw new InavalidShortcutException("Couldn't register shortcut (id=" + id + ").", shortcut);
+                    throw new InvalidShortcutException("Couldn't register shortcut (id=" + id + ").", shortcut);
                 log.Info("Sucessfully registered shortcut (id=" + id + "): " + shortcut);
                 shortcut.Id = id;
             }
@@ -396,7 +396,7 @@ namespace GlobalHotKeys
                     return;
 
                 if (!User32.UnregisterHotKey(IntPtr.Zero, shortcut.Id))
-                    throw new InavalidShortcutException("Couldn't unregister shortcut (id=" + shortcut.Id + ").", shortcut);
+                    throw new InvalidShortcutException("Couldn't unregister shortcut (id=" + shortcut.Id + ").", shortcut);
 
                 log.Info("Sucessfully unregistered shortcut (id=" + shortcut.Id + "): " + shortcut);
                 shortcut.Id = 0;
@@ -409,7 +409,7 @@ namespace GlobalHotKeys
                         try {
                             loadShortcut(mCurrentShortcutsList[i], i + 1);
                             i++;
-                        } catch (InavalidShortcutException e) {
+                        } catch (InvalidShortcutException e) {
                             log.Warn("Invalid shortcut ignored: " + e.InvalidShortcut);
                             mCurrentShortcutsList.RemoveAt(i);
                         }
@@ -430,7 +430,7 @@ namespace GlobalHotKeys
                     try {
                         unloadShortcut(mCurrentShortcutsList[i]);
                         i++;
-                    } catch (InavalidShortcutException e) {
+                    } catch (InvalidShortcutException e) {
                         log.Warn("Invalid shortcut ignored: " + e.InvalidShortcut);
                     }
                 }

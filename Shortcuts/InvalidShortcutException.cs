@@ -4,27 +4,27 @@ namespace GlobalHotKeys
 {
     namespace Shortcuts
     {
-        class InavalidShortcutException : ApplicationException
+        class InvalidShortcutException : ApplicationException
         {
             public ShortcutData InvalidShortcut {get; set;}
 
-            public InavalidShortcutException() :
+            public InvalidShortcutException() :
                 base() { }
-            public InavalidShortcutException(string msg) :
+            public InvalidShortcutException(string msg) :
                 base(msg) { }
-            public InavalidShortcutException(string msg, Exception e) :
+            public InvalidShortcutException(string msg, Exception e) :
                 base(msg, e) { }
-            public InavalidShortcutException(ShortcutData shortcut) :
+            public InvalidShortcutException(ShortcutData shortcut) :
                 base()
             {
                 InvalidShortcut = shortcut;
             }
-            public InavalidShortcutException(string msg, ShortcutData shortcut) :
+            public InvalidShortcutException(string msg, ShortcutData shortcut) :
                 base(msg)
             {
                 InvalidShortcut = shortcut;
             }
-            public InavalidShortcutException(string msg, ShortcutData shortcut, Exception e) :
+            public InvalidShortcutException(string msg, ShortcutData shortcut, Exception e) :
                 base(msg, e)
             {
                 InvalidShortcut = shortcut;
