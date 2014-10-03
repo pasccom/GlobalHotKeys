@@ -165,5 +165,30 @@ namespace GlobalHotKeys
         {
             return (keyCombination() + " -> " + action());
         }
+
+        public ShortcutData Clone()
+        {
+            return new ShortcutData() {
+                Modifier = this.Modifier,
+                Key = this.Key,
+                Id = 0,
+                Class = this.Class,
+                Method = this.Method
+            };
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)Modifier + (int)Key + Class.GetHashCode() + Method.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            ShortcutData shortcut = obj as ShortcutData;
+            if (shortcut == null)
+                return false;
+
+            return ((shortcut.Modifier == Modifier) && (shortcut.Key == Key) && (shortcut.Class == Class) && (shortcut.Method == Method));
+        }
     }
 }
