@@ -9,7 +9,11 @@ namespace GlobalHotKeys
     {
         class Manager
         {
+            private enum State {Running, ShuttingDownn, Rebooting};
+
             static private readonly ILog log = LogManager.GetLogger(typeof(Manager));
+
+            static private State mState = State.Running;
 
             static public List<string> AuthorizedMethods
             {
@@ -30,7 +34,24 @@ namespace GlobalHotKeys
 
                 log.InfoFormat("Called Power.Manager.shutdown({0})", when);
 
-                Process.Start("shutdown", "/s /t " + when);
+                switch (mState) {
+                case State.Running:
+                    log.Debug("Shutting down.");
+                    Process.Start("shutdown", "/s /t " + when);
+                    mState = State.ShuttingDownn;
+                    break;
+                case State.ShuttingDownn:
+                    log.Debug("Cancelling shutdown.");
+                    Process.Start("shutdown", "/a");
+                    mState = State.Running;
+                    break;
+                case State.Rebooting:
+                    log.Debug("Cancelling rebbot and shutting down.");
+                    Process.Start("shutdown", "/a");
+                    Process.Start("shutdown", "/s /t " + when);
+                    mState = State.ShuttingDownn;
+                    break;
+                }
             }
 
             static public void reboot(List<string> args)
@@ -45,6 +66,25 @@ namespace GlobalHotKeys
                 log.InfoFormat("Called Power.Manager.reboot({0})", when);
 
                 Process.Start("shutdown", "/r /t " + when);
+
+                switch (mState) {
+                case State.Running:
+                    log.Debug("Rebooting.");
+                    Process.Start("shutdown", "/r /t " + when);
+                    mState = State.Rebooting;
+                    break;
+                case State.Rebooting:
+                    log.Debug("Cancelling reboot.");
+                    Process.Start("shutdown", "/a");;
+                    mState = State.Running;
+                    break;
+                case State.ShuttingDownn:
+                    log.Debug("Cancelling shutdown and rebooting.");
+                    Process.Start("shutdown", "/a");
+                    Process.Start("shutdown", "/r /t " + when);;
+                    mState = State.Rebooting;
+                    break;
+                }
             }
 
             static public void logOff(List<string> args)
