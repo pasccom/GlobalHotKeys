@@ -215,7 +215,7 @@ namespace GlobalHotKeys
                 return where.Find((ShortcutData shortcut) =>
                 {
                     return ((shortcut.Modifier == shortcutModifiers) && (shortcut.Key == shortcutKey));
-                });
+                }).Clone();
             }
 
             private List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, List<ShortcutData> where)
@@ -223,14 +223,14 @@ namespace GlobalHotKeys
                 return where.FindAll((ShortcutData shortcut) =>
                 {
                     return ((shortcut.Class == shortcutClass) && (shortcut.Method == shortcutMethod));
-                });
+                }).ConvertAll<ShortcutData>((ShortcutData input) => { return input.Clone(); });
             }
 
             private void checkShortcut(ShortcutData shortcut)
             {
                 // Check that shortcut is valid:
                 if (!shortcut.isValid())
-                    throw new InavalidShortcutException("Loading a shortcut with no or empty class is forbidden", shortcut);
+                    throw new InavalidShortcutException("Loading an invalid shortcut is forbidden", shortcut);
 
                 // Gets the method class :
                 Type providerClass = Type.GetType("GlobalHotKeys." + shortcut.Class);
@@ -305,6 +305,73 @@ namespace GlobalHotKeys
                     log.Error("Couldn't find the specified method.", e);
                 }
 
+            }
+
+            public void registerShortcut(ShortcutData shortcut)
+            {
+                int s = 0;
+                while (++s <= mCurrentShortcutsList.Count)
+                    if ((mCurrentShortcutsList[s - 1].Id != 0) && (mCurrentShortcutsList[s - 1].Id != s))
+                        break;
+
+                loadShortcut(shortcut, s, true);
+                mCurrentShortcutsList.Insert(s - 1, shortcut);
+            }
+
+            public void unregisterShortcut(ShortcutData shortcut)
+            {
+                int s = findShortcutId(shortcut);
+
+                if (s > mCurrentShortcutsList.Count)
+                    throw new InavalidShortcutException("Shortcut is not currently loaded.", shortcut);
+
+                unloadShortcut(mCurrentShortcutsList[s - 1]);
+                mCurrentShortcutsList.RemoveAt(s - 1);
+            }
+
+            public void replaceShortcut(ShortcutData oldShortcut, ShortcutData newShortcut)
+            {
+                int s = findShortcutId(oldShortcut);
+
+                if (s > mCurrentShortcutsList.Count)
+                    throw new InavalidShortcutException("Shortcut is not currently loaded.", oldShortcut);
+
+                unloadShortcut(mCurrentShortcutsList[s - 1]);
+                mCurrentShortcutsList.RemoveAt(s - 1);
+                if (newShortcut.Id == 0) {
+                    loadShortcut(newShortcut, s, true);
+                    mCurrentShortcutsList.Insert(s - 1, newShortcut);
+                }
+            }
+
+            public void activateShortcut(ShortcutData shortcut)
+            {
+                int s = findShortcutId(shortcut);
+
+                if (s > mCurrentShortcutsList.Count)
+                    throw new InavalidShortcutException("Shortcut is not currently loaded.", shortcut);
+
+                loadShortcut(mCurrentShortcutsList[s - 1], s, true);
+            }
+
+            public void deactivateShortcut(ShortcutData shortcut)
+            {
+                int s = findShortcutId(shortcut);
+
+                if (s > mCurrentShortcutsList.Count)
+                    throw new InavalidShortcutException("Shortcut is not currently loaded.", shortcut);
+
+                unloadShortcut(mCurrentShortcutsList[s - 1]);
+            }
+
+            private int findShortcutId(ShortcutData shortcut)
+            {
+                int s = 0;
+                while (++s <= mCurrentShortcutsList.Count)
+                    if (shortcut.Equals(mCurrentShortcutsList[s - 1]))
+                        break;
+
+                return s;
             }
 
             private void loadShortcut(ShortcutData shortcut, int id, bool userDefined = true)
