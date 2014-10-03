@@ -4,8 +4,6 @@ using System.Linq;
 using System.Reflection;
 using log4net;
 
-using GlobalHotkeys.Shortcuts;
-
 namespace GlobalHotKeys
 {
     namespace Shortcuts
