@@ -179,7 +179,7 @@ namespace GlobalHotKeys
                 process.StartInfo.FileName = processData.ExePath;
                 process.StartInfo.Arguments = String.Join<string>(" ", processData.StartArguments);
                 process.StartInfo.WorkingDirectory = processData.StartFolder;
-                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.UseShellExecute = processData.Shell;
 
                 process.Start();
             }
