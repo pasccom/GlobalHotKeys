@@ -51,6 +51,8 @@ namespace GlobalHotKeys.Windows
         public bool parseShell(string arg)
         {
             switch (arg) {
+            case "":
+                return true;
             case "X":
                 Shell = true;
                 return true;
