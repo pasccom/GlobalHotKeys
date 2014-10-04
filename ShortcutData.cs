@@ -135,8 +135,8 @@ namespace GlobalHotKeys
             offset++;
 
             // Handles page dowm and page up keys:
-            if ((key == (uint)Keys.PgDown) || (key == (uint)Keys.PgUp))
-                return offset + key - (uint)Keys.PgDown;
+            if ((key == (uint)Keys.PgUp) || (key == (uint)Keys.PgDown))
+                return offset + key - (uint)Keys.PgUp;
             offset += 2;
 
             // Handles directionnal arrow keys:
@@ -164,6 +164,11 @@ namespace GlobalHotKeys
                 return offset - 1;
 
             return 0;
+        }
+
+        public static uint getKeyHashCode(ShortcutData.Keys key)
+        {
+            return getKeyHashCode((uint)key);
         }
 
         public static uint getKeyCodeCount()
