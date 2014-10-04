@@ -12,7 +12,8 @@ namespace GlobalHotKeys
         private static readonly ILog log = LogManager.GetLogger(typeof(PlainTextConfig));
 
         private string mFileName;
-        public string FileName {
+        public string FileName
+        {
             get
             {
                 return mFileName;
@@ -86,19 +87,23 @@ namespace GlobalHotKeys
 
         private void parseModifiers(ShortcutData shortcut, string line)
         {
-            ShortcutData.Modifiers[] modifiers = { ShortcutData.Modifiers.ALT, ShortcutData.Modifiers.CTRL, ShortcutData.Modifiers.SHIFT, ShortcutData.Modifiers.META };
+            Array modifiers = Enum.GetValues(typeof(ShortcutData.Modifiers));
 
             // Line is too short to hold modifiers:
             if (line.Length < 8)
                 throw new BadConfigException("Unexpected end of line", mFileName, 0, 8);
 
-            for (int i = 0; i < modifiers.Length; i++) {
+            for (int i = 0; i < modifiers.Length / 3; i++) {
                 if (line[2 * i + 1] == 'X')
-                    shortcut.addModifier(modifiers[i]);
+                    shortcut.addModifier((ShortcutData.Modifiers)modifiers.GetValue(2 + 3 * i));
+                else if (line[2 * i + 1] == 'L')
+                    shortcut.addModifier((ShortcutData.Modifiers)modifiers.GetValue(1 + 3 * i));
+                else if (line[2 * i + 1] == 'R')
+                    shortcut.addModifier((ShortcutData.Modifiers)modifiers.GetValue(0 + 3 * i));
                 else if (line[2 * i + 1] == 'O')
-                    shortcut.removeModifier(modifiers[i]);
+                    shortcut.removeModifier((ShortcutData.Modifiers)modifiers.GetValue(2 + 3 * i));
                 else
-                    throw new BadConfigException("Invalid setting for " + modifiers[i] + " modifier", mFileName, 0, (uint)(2 * i + 2));
+                    throw new BadConfigException("Invalid setting for " + (ShortcutData.Modifiers)modifiers.GetValue(1 + 3 * i) + " modifier", mFileName, 0, (uint)(2 * i + 2));
             }
         }
 

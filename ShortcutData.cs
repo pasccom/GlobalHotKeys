@@ -9,13 +9,24 @@ namespace GlobalHotKeys
         /// <summary>
         ///     Enumeration of all supported modifiers.
         ///     <list type="bullet">
-        ///         <item><term>ALT</term> <description>Any of the ALT key is pressed</description></item>
-        ///         <item><term>CTRL</term> <description>Any of the CTRL key is pressed</description></item>
-        ///         <item><term>SHIFT</term> <description>Any of the Shift key is pressed</description></item>
-        ///         <item><term>META</term> <description>Any of the "windows" key is pressed</description></item>
+        ///         <item><term>R_ALT</term> <description>The right ALT key is pressed</description></item>
+        ///         <item><term>L_ALT</term> <description>The left ALT key is pressed</description></item>
+        ///         <item><term>X_ALT</term> <description>Any of the ALT key is pressed</description></item>
+        ///         <item><term>R_CTRL</term> <description>The right CTRL key is pressed</description></item>
+        ///         <item><term>L_CTRL</term> <description>The left CTRL key is pressed</description></item>
+        ///         <item><term>X_CTRL</term> <description>Any of the CTRL key is pressed</description></item>
+        ///         <item><term>R_SHIFT</term> <description>The right Shift key is pressed</description></item>
+        ///         <item><term>L_SHIFT</term> <description>The left Shift key is pressed</description></item>
+        ///         <item><term>X_SHIFT</term> <description>Any of the Shift key is pressed</description></item>
+        ///         <item><term>R_META</term> <description>The right "windows" key is pressed</description></item>
+        ///         <item><term>L_META</term> <description>The left "windows" key is pressed</description></item>
+        ///         <item><term>X_META</term> <description>Any of the "windows" key is pressed</description></item>
         ///     </list>
         /// </summary>
-        public enum Modifiers { ALT = 0x1, CTRL = 0x2, SHIFT = 0x4, META = 0x8 }
+        public enum Modifiers { R_ALT = 0x01, L_ALT = 0x02, X_ALT = 0x03,
+                                R_CTRL = 0x04, L_CTRL = 0x08, X_CTRL = 0x0C,
+                                R_SHIFT = 0x10, L_SHIFT = 0x20, X_SHIFT = 0x30,
+                                R_META = 0x40, L_META = 0x80, X_META = 0xC0 }
         /// <summary>
         ///     Enumeration of the supported keys. 
         ///     <list type="bullet">
@@ -60,14 +71,14 @@ namespace GlobalHotKeys
         public int Id { get; set; }
 
         public static ShortcutData exitShortcut = new ShortcutData() {
-            Modifier = Modifiers.ALT | Modifiers.CTRL,
+            Modifier = Modifiers.X_ALT | Modifiers.X_CTRL,
             Key = Keys.C,
             Class = "Shortcuts.Handler",
             Method = "exit",
         };
 
         public static ShortcutData resetShortcut = new ShortcutData() {
-            Modifier = Modifiers.ALT | Modifiers.CTRL,
+            Modifier = Modifiers.X_ALT | Modifiers.X_CTRL,
             Key = Keys.Esc,
             Class = "Shortcuts.Handler",
             Method = "reset",
@@ -168,10 +179,14 @@ namespace GlobalHotKeys
         public bool isSpecial()
         {
             // Signals CTRL + ALT + Escape reserved shortcut (reset):
-            if ((Modifier == (ShortcutData.Modifiers.ALT | ShortcutData.Modifiers.CTRL)) && (Key == ShortcutData.Keys.Esc))
+            if (((Modifier & (ShortcutData.Modifiers.X_ALT | ShortcutData.Modifiers.X_CTRL)) != 0)
+             && ((Modifier & ~(ShortcutData.Modifiers.X_ALT | ShortcutData.Modifiers.X_CTRL)) == 0)
+             && (Key == ShortcutData.Keys.Esc))
                 return true;
             // Prevents the user to load CTRL + ALT + C reserved shortcut (exit):
-            if ((Modifier == (ShortcutData.Modifiers.ALT | ShortcutData.Modifiers.CTRL)) && (Key == ShortcutData.Keys.C))
+            if (((Modifier & (ShortcutData.Modifiers.X_ALT | ShortcutData.Modifiers.X_CTRL)) != 0)
+             && ((Modifier & ~(ShortcutData.Modifiers.X_ALT | ShortcutData.Modifiers.X_CTRL)) == 0)
+             && (Key == ShortcutData.Keys.C))
                 return true;
 
             return false;
@@ -193,12 +208,17 @@ namespace GlobalHotKeys
 
         public string keyCombination()
         {
-            ShortcutData.Modifiers[] modifiers = { ShortcutData.Modifiers.ALT, ShortcutData.Modifiers.CTRL, ShortcutData.Modifiers.SHIFT, ShortcutData.Modifiers.META };
+            Array modifiers = Enum.GetValues(typeof(Modifiers));
             string ret = String.Empty;
 
-            for (int i = 0; i < modifiers.Length; i++)
-                if ((uint)(Modifier & modifiers[i]) != 0)
-                    ret += (modifiers[i] + "+");
+            for (int i = 2; i < modifiers.Length; i += 3) {
+                if ((Modifier & (Modifiers) modifiers.GetValue(i)) == (Modifiers) modifiers.GetValue(i))
+                    ret += ((Modifiers) modifiers.GetValue(i) + "+");
+                else if ((Modifier & (Modifiers) modifiers.GetValue(i - 1)) == (Modifiers) modifiers.GetValue(i - 1))
+                    ret += ((Modifiers) modifiers.GetValue(i - 1) + "+");
+                else if ((Modifier & (Modifiers)modifiers.GetValue(i - 2)) == (Modifiers)modifiers.GetValue(i - 2))
+                    ret += ((Modifiers)modifiers.GetValue(i - 2) + "+");
+            }
             ret += Key;
 
             return ret;
