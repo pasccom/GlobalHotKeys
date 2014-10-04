@@ -41,6 +41,48 @@ namespace GlobalHotKeys
             N0 = 0x60, N1 = 0x61, N2 = 0x62, N3 = 0x63, N4 = 0x64, N5 = 0x65, N6 = 0x66, N7 = 0x67, N8 = 0x68, N9 = 0x69
         }
 
+        public uint getKeyHashCode()
+        {
+            uint offset = 0;
+
+            // Handles no key:
+            if (Key == Keys.None)
+                return offset;
+            offset++;
+
+            // Handles Escape key: 
+            if (Key == Keys.Esc)
+                return offset;
+            offset++;
+
+            // Handles page dowm and page up keys:
+            if ((Key == Keys.PgDown) || (Key == Keys.PgUp))
+                return offset + (uint)Key - (uint)Keys.PgDown;
+            offset+=2;
+
+            // Handles directionnal arrow keys:
+            if (((uint) Key >= (uint) Keys.Left) && ((uint) Key <= (uint) Keys.Right))
+                return offset + (uint) Key - (uint) Keys.Left;
+            offset+=(1 + (uint) Keys.Right - (uint) Keys.Left);
+
+            // Handles F1 to F12 keys:
+            if (((uint)Key >= (uint)Keys.F1) && ((uint)Key <= (uint)Keys.F12))
+                return offset + (uint)Key - (uint)Keys.F1;
+            offset += (1 + (uint)Keys.F12 - (uint)Keys.F1);
+
+            // Handles letters keys:
+            if (((uint)Key >= (uint)Keys.A) && ((uint)Key <= (uint)Keys.Z))
+                return offset + (uint)Key - (uint)Keys.A;
+            offset += (1 + (uint)Keys.Z - (uint)Keys.A);
+
+            // Handles numpad numbers keys:
+            if (((uint)Key >= (uint)Keys.N0) && ((uint)Key <= (uint)Keys.N9))
+                return offset + (uint)Key - (uint)Keys.N0;
+            offset += (1 + (uint)Keys.N9 - (uint)Keys.N0);
+
+            throw new OverflowException("Virtual key is out of known range");
+        }
+
         /// <summary>
         ///     Modifiers of this shortcut.
         /// </summary>
