@@ -14,6 +14,7 @@ namespace GlobalHotKeys
 
             private List<ShortcutData> mDefaultShortcutsList;
             private List<ShortcutData> mCurrentShortcutsList;
+            private HookHandler mHookHandler;
             private static Handler sInstance;
 
             public enum SearchScope
@@ -59,6 +60,8 @@ namespace GlobalHotKeys
 
             private Handler(ConfigProvider config)
             {
+                mHookHandler = new HookHandler();
+
                 loadShortcut(ShortcutData.exitShortcut, -1, false);
                 loadShortcut(ShortcutData.resetShortcut, -2, false);
 
@@ -71,18 +74,16 @@ namespace GlobalHotKeys
 
             ~Handler()
             {
-                unloadShortcuts();
-
-                unloadShortcut(ShortcutData.exitShortcut);
-                unloadShortcut(ShortcutData.resetShortcut);
+                mHookHandler.reset();
             }
 
             public void resetShortcuts(List<string> args)
             {
-                if (args.Count != 1)
+                if (args.Count != 0)
                     throw new BadArgumentCountException("resetShortcuts() admits no arguments", 0);
 
-                unloadShortcuts();
+                resetShortcuts();
+
                 mCurrentShortcutsList = mDefaultShortcutsList;
                 loadShortcuts();
             }
@@ -94,7 +95,7 @@ namespace GlobalHotKeys
 
                 string path = args[1];
 
-                unloadShortcuts();
+                resetShortcuts();
 
                 mCurrentShortcutsList = new List<ShortcutData>();
 
@@ -109,9 +110,22 @@ namespace GlobalHotKeys
                 loadShortcuts();
             }
 
+            private void resetShortcuts()
+            {
+                mHookHandler.reset();
+
+                foreach (ShortcutData shortcut in mCurrentShortcutsList)
+                    shortcut.Id = 0;
+                ShortcutData.exitShortcut.Id = 0;
+                ShortcutData.resetShortcut.Id = 0;
+
+                loadShortcut(ShortcutData.exitShortcut, -1, false);
+                loadShortcut(ShortcutData.resetShortcut, -2, false);
+            }
+
             private void changeDefaultConfig(ConfigProvider config)
             {
-                unloadShortcuts();
+                resetShortcuts();
 
                 mDefaultShortcutsList.Clear();
                 setDefaultConfig(config);
@@ -323,7 +337,7 @@ namespace GlobalHotKeys
                 if (s > mCurrentShortcutsList.Count)
                     throw new InvalidShortcutException("Shortcut is not currently loaded.", shortcut);
 
-                unloadShortcut(mCurrentShortcutsList[s - 1]);
+                mHookHandler.unloadShortcut(shortcut.Modifier, shortcut.Key);
                 mCurrentShortcutsList.RemoveAt(s - 1);
             }
 
@@ -334,7 +348,7 @@ namespace GlobalHotKeys
                 if (s > mCurrentShortcutsList.Count)
                     throw new InvalidShortcutException("Shortcut is not currently loaded.", oldShortcut);
 
-                unloadShortcut(mCurrentShortcutsList[s - 1]);
+                mHookHandler.unloadShortcut(oldShortcut.Modifier, oldShortcut.Key);
                 mCurrentShortcutsList.RemoveAt(s - 1);
                 if (newShortcut.Id == 0) {
                     loadShortcut(newShortcut, s, true);
@@ -359,9 +373,11 @@ namespace GlobalHotKeys
                 if (s > mCurrentShortcutsList.Count)
                     throw new InvalidShortcutException("Shortcut is not currently loaded.", shortcut);
 
-                unloadShortcut(mCurrentShortcutsList[s - 1]);
+                mHookHandler.unloadShortcut(shortcut.Modifier, shortcut.Key);
+                mCurrentShortcutsList[s - 1].Id = 0;
             }
 
+            // TODO: I think the id member is not needed any more. It can be deleted.
             private int findShortcutId(ShortcutData shortcut)
             {
                 int s = 0;
@@ -382,22 +398,9 @@ namespace GlobalHotKeys
                 if (shortcut.Id != 0)
                     return;
 
-                if (!User32.RegisterHotKey(IntPtr.Zero, id, (int)shortcut.Modifier | User32.MOD_NOREPEAT, (int)shortcut.Key))
-                    throw new InvalidShortcutException("Couldn't register shortcut (id=" + id + ").", shortcut);
+                mHookHandler.loadShortcut(shortcut.Modifier, shortcut.Key, id);
                 log.Info("Sucessfully registered shortcut (id=" + id + "): " + shortcut);
                 shortcut.Id = id;
-            }
-
-            private void unloadShortcut(ShortcutData shortcut)
-            {
-                if (shortcut.Id == 0)
-                    return;
-
-                if (!User32.UnregisterHotKey(IntPtr.Zero, shortcut.Id))
-                    throw new InvalidShortcutException("Couldn't unregister shortcut (id=" + shortcut.Id + ").", shortcut);
-
-                log.Info("Sucessfully unregistered shortcut (id=" + shortcut.Id + "): " + shortcut);
-                shortcut.Id = 0;
             }
 
             private void loadShortcuts()
@@ -414,23 +417,8 @@ namespace GlobalHotKeys
                     }
                 } catch (UnauthorizedShortcutException e) {
                     log.Error("Unauthorized shortcut : " + e.UnauthorizedShortcut + ". Clearing all shortcuts.", e);
-                    unloadShortcuts();
+                    resetShortcuts();
                     mCurrentShortcutsList = new List<ShortcutData>();
-                }
-            }
-
-            private void unloadShortcuts()
-            {
-                if (mCurrentShortcutsList == null)
-                    return;
-
-                for (int i = 0; i < mCurrentShortcutsList.Count; ) {
-                    try {
-                        unloadShortcut(mCurrentShortcutsList[i]);
-                        i++;
-                    } catch (InvalidShortcutException e) {
-                        log.Warn("Invalid shortcut ignored: " + e.InvalidShortcut);
-                    }
                 }
             }
         }
