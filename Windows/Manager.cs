@@ -50,7 +50,7 @@ namespace GlobalHotKeys
                 List<Process> processes = findProcesses(process.ExePath);
                 if (processes.Count == 0) {
                     // Start process
-                    startProcess(process.StartPath, process.StartFolder);
+                    startProcess(process);
                 } else {
                     if (title == null) {
                         // Use the .NET provided MainWindowHandle (not always good...)
@@ -120,8 +120,7 @@ namespace GlobalHotKeys
 
                 log.InfoFormat("Called Windows.Manager.start(\"{0}\")", processName);
 
-                ProcessData process = mProcessessList[processName];
-                startProcess(process.StartPath, process.StartFolder);
+                startProcess(mProcessessList[processName]);
             }
 
             static private User32.ShowState parseSize(String sizeName)
@@ -172,13 +171,14 @@ namespace GlobalHotKeys
                 }
             }
 
-            static private void startProcess(string exePath, string startPath = null)
+            static private void startProcess(ProcessData processData)
             {
-                log.Info("Starting process: " + exePath);
+                log.Info("Starting process: " + processData.ExePath);
 
                 Process process = new Process();
-                process.StartInfo.FileName = exePath;
-                process.StartInfo.WorkingDirectory = startPath;
+                process.StartInfo.FileName = processData.ExePath;
+                process.StartInfo.Arguments = String.Join<string>(" ", processData.StartArguments);
+                process.StartInfo.WorkingDirectory = processData.StartFolder;
                 process.StartInfo.UseShellExecute = false;
 
                 process.Start();
