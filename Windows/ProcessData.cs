@@ -10,6 +10,7 @@ namespace GlobalHotKeys.Windows
         private string mStartPath;
 
         public string ExePath { get; set; }
+        public bool Shell { get; private set; }
         public string StartFolder { get; set; }
         public string StartPath
         {
@@ -32,6 +33,8 @@ namespace GlobalHotKeys.Windows
         public ProcessData()
         {
             ExePath = null;
+            StartPath = null;
+            Shell = false;
             StartFolder = null;
             StartArguments = new List<string>();
         }
@@ -39,8 +42,24 @@ namespace GlobalHotKeys.Windows
         public ProcessData(string exePath, string startFolder)
         {
             ExePath = exePath;
+            StartPath = null;
+            Shell = false;
             StartFolder = startFolder;
             StartArguments = new List<string>();
+        }
+
+        public bool parseShell(string arg)
+        {
+            switch (arg) {
+            case "X":
+                Shell = true;
+                return true;
+            case "O":
+                Shell = false;
+                return true;
+            default:
+                return false;
+            }
         }
 
         public void addArgument(string arg) 
