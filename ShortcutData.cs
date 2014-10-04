@@ -129,9 +129,9 @@ namespace GlobalHotKeys
             offset += 2;
 
             // Handles directionnal arrow keys:
-            if ((key >= (uint)Keys.Left) && (key <= (uint)Keys.Right))
+            if ((key >= (uint)Keys.Left) && (key <= (uint)Keys.Down))
                 return offset + key - (uint)Keys.Left;
-            offset += (1 + (uint)Keys.Right - (uint)Keys.Left);
+            offset += (1 + (uint)Keys.Down - (uint)Keys.Left);
 
             // Handles F1 to F12 keys:
             if ((key >= (uint)Keys.F1) && (key <= (uint)Keys.F12))
@@ -148,7 +148,16 @@ namespace GlobalHotKeys
                 return offset + key - (uint)Keys.N0;
             offset += (1 + (uint)Keys.N9 - (uint)Keys.N0);
 
+            // Flag used to get key code count:
+            if (key == 0xFFFFFFFF)
+                return offset - 1;
+
             return 0;
+        }
+
+        public static uint getKeyCodeCount()
+        {
+            return getKeyHashCode(0xFFFFFFFF);
         }
 
         public uint getKeyHashCode()
