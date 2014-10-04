@@ -66,6 +66,10 @@ namespace GlobalHotKeys
                         // Find exe path:
                         process.ExePath = nextParameterToken(line, ref i);
 
+                        // Find shell flag:
+                        if (!process.parseShell(nextToken(line, ref i)))
+                            throw new BadConfigException("Could not parse shell flag token", mFileName, l, (uint) i);
+
                         // Find start folder:
                         string startFolder = nextParameterToken(line, ref i);
                         if (startFolder != String.Empty)

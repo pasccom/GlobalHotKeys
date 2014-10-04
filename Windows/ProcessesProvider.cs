@@ -22,6 +22,7 @@ namespace GlobalHotKeys
                 log.Info("Added new process: " + name);
                 log.Debug("\t-Executable path: " + process.ExePath);
                 log.Debug("\t-Start folder: " + process.StartFolder);
+                log.Debug("\t-New shell: " + (process.Shell ? "Yes" : "No"));
                 log.Debug("\t-Real executable path: " + process.StartPath);
                 log.Debug("\t-Arguments: " + String.Join<string>(", ", process.StartArguments));
 
