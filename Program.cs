@@ -28,7 +28,7 @@ namespace GlobalHotKeys
             if (args.Length > argStart + 1)
                 processesPath = args[argStart + 1];
             else
-                processesPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\Pascom\GlobalHotKeys\globalhotkeys.processes.conf";
+                processesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) + @"\Pascom\GlobalHotKeys\globalhotkeys.processes.conf";
 
             log.Info("Starting GlobalHotKeys with configuration file :" + configPath);
             log.Info("Starting GlobalHotKeys with process list file :" + processesPath);
