@@ -146,7 +146,7 @@ namespace GlobalHotKeys
             public void exec()
             {
                 User32.MSG msg;
-                while (User32.GetMessage(out msg, IntPtr.Zero, User32.WM_HOTKEY, User32.WM_HOTKEY)) {
+                while (User32.GetMessage(out msg, IntPtr.Zero, 0, 0)) {
                     if (msg.message != User32.WM_HOTKEY) {
                         log.Warn("Unhandled message received: " + msg.message);
                         continue;
@@ -167,7 +167,7 @@ namespace GlobalHotKeys
                         return;
                     }
 
-                    log.Debug("Got hotkey: id=" + id);
+                    log.Info("Got hotkey: id=" + id);
 
                     // Handles exit special shortcut
                     if (id == -1)
