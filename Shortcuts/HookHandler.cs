@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 using log4net;
 
@@ -14,6 +15,8 @@ namespace GlobalHotKeys
             private User32.HookProc mHookCallbackHandle;
             private ModifierStates[] mModifierStates;
             private ModifierStates[] mSavedModifierStates;
+
+            private Mutex mKeyCombinationsMutex;
             private int[] mKeyCombinations;
 
             private enum ModifierIndexes
@@ -62,6 +65,7 @@ namespace GlobalHotKeys
                 for (uint i = 0; i < (uint)ModifierIndexes.Count; i++)
                     mModifierStates[i] = ModifierStates.None;
 
+                mKeyCombinationsMutex = new Mutex();
                 mKeyCombinations = new int[ShortcutData.getKeyCodeCount() * 256];
                 reset();
 
@@ -176,6 +180,13 @@ namespace GlobalHotKeys
                     if (mSavedModifierStates == null)
                         mSavedModifierStates = mModifierStates;
 
+                    /* Tries to lock the mutex so that the other thread cannot modify the list of keycombinations.
+                     * If the attempt does not succeed, then the mutex is owned by the other thread.
+                     * In this case it should not wait and the shortcut is ignored.
+                     */
+                    if(!mKeyCombinationsMutex.WaitOne(0))
+                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+
                     // TODO: This is not optimal.
                     foreach (int modifierFlag in new int[] { 0, 1, 2, 4, 8, 3, 5, 9, 6, 10, 12, 7, 11, 13, 14, 15 }) {
                         uint modifierHash = 0;
@@ -190,6 +201,8 @@ namespace GlobalHotKeys
                         if (id != 0)
                             break;
                     }
+
+                    mKeyCombinationsMutex.ReleaseMutex();
 
                     // No shortcut associated with this key combination:
                     if (id == 0)
@@ -215,28 +228,37 @@ namespace GlobalHotKeys
 
             public void reset()
             {
+                mKeyCombinationsMutex.WaitOne();
                 for (uint i = 0; i < ShortcutData.getKeyCodeCount() * 256; i++)
                     mKeyCombinations[i] = 0;
+                mKeyCombinationsMutex.ReleaseMutex();
             }
 
             public void loadShortcut(ShortcutData.Modifiers modifier, ShortcutData.Keys key, int id)
             {
                 uint index = hash(modifier, key);
 
-                if (mKeyCombinations[index] != 0)
+                mKeyCombinationsMutex.WaitOne();
+                if (mKeyCombinations[index] != 0) {
+                    mKeyCombinationsMutex.ReleaseMutex();
                     throw new InvalidShortcutException("A shortcut with the same modifier (" + modifier + ") and the same key (" + key + ") already exists");
-
+                }
                 mKeyCombinations[index] = id;
+                mKeyCombinationsMutex.ReleaseMutex();
             }
 
             public void unloadShortcut(ShortcutData.Modifiers modifier, ShortcutData.Keys key)
             {
                 uint index = hash(modifier, key);
 
-                if (mKeyCombinations[index] == 0)
+                mKeyCombinationsMutex.WaitOne();
+                if (mKeyCombinations[index] == 0) {
+                    mKeyCombinationsMutex.ReleaseMutex();
                     throw new InvalidShortcutException("The shortcut with modifier (" + modifier + ") and  key (" + key + ") does not exist");
+                }
 
                 mKeyCombinations[index] = 0;
+                mKeyCombinationsMutex.ReleaseMutex();
             }
 
             private uint hash(ShortcutData.Modifiers modifier, ShortcutData.Keys key)
