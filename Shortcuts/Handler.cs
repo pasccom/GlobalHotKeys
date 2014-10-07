@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+
 using log4net;
 
 namespace GlobalHotKeys
@@ -11,6 +13,10 @@ namespace GlobalHotKeys
         class Handler
         {
             static private readonly ILog log = LogManager.GetLogger(typeof(Handler));
+
+            // Data for thread synchronization:
+            private Queue<int> mActionQueue;
+            private Semaphore mActionSemaphore;
 
             private List<ShortcutData> mDefaultShortcutsList;
             private List<ShortcutData> mCurrentShortcutsList;
@@ -60,6 +66,9 @@ namespace GlobalHotKeys
 
             private Handler(ConfigProvider config)
             {
+                mActionQueue = new Queue<int>();
+                mActionSemaphore = new Semaphore(0, 50);
+                
                 mHookHandler = new HookHandler();
 
                 loadShortcut(ShortcutData.exitShortcut, -1, false);
@@ -143,8 +152,40 @@ namespace GlobalHotKeys
                 config.parseConfig();
             }
 
+            public void actionThread()
+            {
+                log.Info("Worker thread started");
+
+                while (true) {
+                    int id = 0;
+                    mActionSemaphore.WaitOne();
+                    lock (mActionQueue) {
+                        id = mActionQueue.Dequeue();
+                    }
+
+                    log.InfoFormat("Worker thread received id={0}", id);
+
+                    if (id == -1)
+                        break;
+                    if (id == -2)
+                        resetShortcuts(new List<string>());
+
+                    if (id > 0) {
+                        if (id <= mCurrentShortcutsList.Count)
+                            callShortcut(mCurrentShortcutsList[id - 1]);
+                        else
+                            log.Warn("Got bad shortcut id: " + id);
+                    }
+                }
+
+                log.Info("Worker thread exited");
+            }
+
             public void exec()
             {
+                Thread workerThread = new Thread(actionThread);
+                workerThread.Start();
+
                 User32.MSG msg;
                 while (User32.GetMessage(out msg, IntPtr.Zero, 0, 0)) {
                     if (msg.message != User32.WM_HOTKEY) {
@@ -164,24 +205,26 @@ namespace GlobalHotKeys
                         id = (int)((long)msg.wParam.ToUInt64());
                     } else {
                         log.ErrorFormat("Your version of the frameWork ({0}) is not supported. Exiting.", Environment.Version);
-                        return;
+                        break;
                     }
 
                     log.Info("Got hotkey: id=" + id);
 
+                    lock(mActionQueue) {
+                        mActionQueue.Enqueue(id);
+                    }
+                    try {
+                        mActionSemaphore.Release();
+                    } catch (SemaphoreFullException e) {
+                        log.WarnFormat("Semaphore is totally full");
+                    }
+
                     // Handles exit special shortcut
                     if (id == -1)
-                        return;
-                    if (id == -2)
-                        resetShortcuts(new List<string>());
-
-                    if (id > 0) {
-                        if (id <= mCurrentShortcutsList.Count)
-                            callShortcut(mCurrentShortcutsList[id - 1]);
-                        else
-                            log.Warn("Got bad shortcut id: " + id);
-                    }
+                        break;
                 }
+
+                workerThread.Join();
             }
 
             public ShortcutData findShortcut(ShortcutData.Modifiers shortcutModifiers, ShortcutData.Keys shortcutKey, SearchScope where = SearchScope.All)
