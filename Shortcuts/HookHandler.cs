@@ -113,7 +113,7 @@ namespace GlobalHotKeys
                     if (Enum.IsDefined(typeof(ModifierVirtualKeyCodes), keyboardLowLevelData.vkCode)) {
                         // This is a modifier with an non standard scan code. Ignored.
                         if (!Enum.IsDefined(typeof(ModifierScanCodes), keyboardLowLevelData.scanCode)) {
-                            log.InfoFormat("The scan code ({}) is not a modifier scan code", keyboardLowLevelData.scanCode);
+                            log.InfoFormat("The scan code ({0}) is not a modifier scan code", keyboardLowLevelData.scanCode);
                             return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
                         }
 
@@ -167,7 +167,9 @@ namespace GlobalHotKeys
                     if (keyHash == 0)
                         return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
 
-                    // Shortcuts are executed when releasing the key bu the modifiers are saved
+                    /* Shortcuts are executed when releasing the key but the modifiers are saved when pressing the key
+                     * So that even when the user releases the key in a bad order, the command is executed 
+                     */
                     if (!up)
                         mSavedModifierStates = (ModifierStates[]) mModifierStates.Clone();
 
@@ -179,9 +181,9 @@ namespace GlobalHotKeys
                         uint modifierHash = 0;
                         for (int m = 0; m < (uint) ModifierIndexes.Count; m++) {
                             if ((modifierFlag & (1 << m)) == 0)
-                                modifierHash |= ((uint)mSavedModifierStates[m] << 2 * m);
+                                modifierHash |= ((uint) (mSavedModifierStates[m] | mModifierStates[m]) << 2 * m);
                             else
-                                modifierHash |= ((mSavedModifierStates[m] != ModifierStates.None ? (uint)3 : (uint)0) << 2 * m);
+                                modifierHash |= (((mSavedModifierStates[m] | mModifierStates[m]) != ModifierStates.None ? (uint)3 : (uint)0) << 2 * m);
                         }
 
                         id = mKeyCombinations[modifierHash + 256 * (keyHash - 1)];
@@ -198,7 +200,7 @@ namespace GlobalHotKeys
 
                     uint messageModifierHash = 0;
                     for (int m = 0; m < (uint)ModifierIndexes.Count; m++)
-                        messageModifierHash |= ((mSavedModifierStates[m] != ModifierStates.None ? (uint)1 : (uint)0) << m);
+                        messageModifierHash |= (((mSavedModifierStates[m]| mModifierStates[m])  != ModifierStates.None ? (uint)1 : (uint)0) << m);
 
                     // Clears saved modifiers state:
                     mSavedModifierStates = null;
