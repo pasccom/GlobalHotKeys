@@ -16,6 +16,7 @@ namespace GlobalHotKeys
             private ModifierStates[] mModifierStates;
             private ModifierStates[] mSavedModifierStates;
 
+            private Semaphore mModifierSemaphore;
             private Mutex mKeyCombinationsMutex;
             private int[] mKeyCombinations;
 
@@ -60,6 +61,7 @@ namespace GlobalHotKeys
 
             public HookHandler()
             {
+                mModifierSemaphore = new Semaphore(1, 1);
                 mModifierStates = new ModifierStates[(uint)ModifierIndexes.Count];
 
                 for (uint i = 0; i < (uint)ModifierIndexes.Count; i++)
@@ -78,6 +80,16 @@ namespace GlobalHotKeys
                 User32.UnhookWindowsHookEx(mHookHandle);
                 mHookCallbackHandle = null;
             }
+
+            public bool waitModifiersReleased(Int32 timeout)
+            {
+                bool ret = mModifierSemaphore.WaitOne(timeout);
+                log.Debug("Modifiers mutex released.");
+                if (ret)
+                    mModifierSemaphore.Release();
+                return ret;
+            }
+
 
             public IntPtr keyboardLowLevelHookCallback(int code, IntPtr wParam, IntPtr lParam)
             {
@@ -161,6 +173,15 @@ namespace GlobalHotKeys
 
                     log.DebugFormat("Modifiers state: ALT {0}, CTRL {1}, SHIFT {2}, META {3}", mModifierStates[(uint)ModifierIndexes.ALT], mModifierStates[(uint)ModifierIndexes.CTRL], mModifierStates[(uint)ModifierIndexes.SHIFT], mModifierStates[(uint)ModifierIndexes.META]);
 
+                    foreach (ModifierStates state in mModifierStates) {
+                        if (state != ModifierStates.None) {
+                            log.DebugFormat("Semaphore returned: {0}", mModifierSemaphore.WaitOne(0));
+                            return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                        }
+                    }
+
+                    mModifierSemaphore.Release();
+                    log.Debug("Unlocked modifier semaphore");
                     return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
                 }
 

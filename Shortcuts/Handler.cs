@@ -21,6 +21,7 @@ namespace GlobalHotKeys
             private List<ShortcutData> mDefaultShortcutsList;
             private List<ShortcutData> mCurrentShortcutsList;
             private HookHandler mHookHandler;
+            private static Mutex sInstanceMutex = new Mutex();
             private static Handler sInstance;
 
             public enum SearchScope
@@ -45,17 +46,28 @@ namespace GlobalHotKeys
 
             public static Handler getInstance()
             {
-                return sInstance;
+                Handler instance;
+
+                sInstanceMutex.WaitOne();
+                instance = sInstance;
+                sInstanceMutex.ReleaseMutex();
+
+                return instance;
             }
 
             public static Handler getInstance(ConfigProvider config)
             {
+                Handler instance;
+
+                sInstanceMutex.WaitOne();
                 if (sInstance == null)
                     sInstance = new Handler(config);
                 else
                     sInstance.changeDefaultConfig(config);
+                instance = sInstance;
+                sInstanceMutex.ReleaseMutex();
 
-                return sInstance;
+                return instance;
             }
 
             public static ConfigProvider getConfigProvider(string path)
@@ -154,7 +166,7 @@ namespace GlobalHotKeys
 
             public void actionThread()
             {
-                log.Info("Worker thread started");
+                log.InfoFormat("Worker thread started ({0})", Thread.CurrentThread.ManagedThreadId);
 
                 while (true) {
                     int id = 0;
@@ -216,7 +228,7 @@ namespace GlobalHotKeys
                     try {
                         mActionSemaphore.Release();
                     } catch (SemaphoreFullException e) {
-                        log.WarnFormat("Semaphore is totally full");
+                        log.Warn("Semaphore is totally full", e);
                     }
 
                     // Handles exit special shortcut
@@ -225,6 +237,11 @@ namespace GlobalHotKeys
                 }
 
                 workerThread.Join();
+            }
+
+            public bool waitModifiersReleased(Int32 timeout = -1)
+            {
+                return mHookHandler.waitModifiersReleased(timeout);
             }
 
             public ShortcutData findShortcut(ShortcutData.Modifiers shortcutModifiers, ShortcutData.Keys shortcutKey, SearchScope where = SearchScope.All)
