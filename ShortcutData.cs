@@ -153,21 +153,13 @@ namespace GlobalHotKeys
         ///     A string representing a key. 
         ///     It should be the name of one of the <see cref="Keys"/> enum.
         /// </param>
-        /// <exception cref="ReflectionTypeLoadException">
-        ///     If it does not succeed to fild the enum <see cref="Keys"/>.
-        ///     This should never occur.
-        /// </exception>
         /// <exception cref="ArgumentException">
         ///     If the given string is not a valid key name.
         /// </exception>
         public void setKey(string key)
         {
-            Type keyEnumType = GetType().GetNestedType("Keys");
-            if ((keyEnumType == null) || !keyEnumType.IsEnum)
-                throw new ReflectionTypeLoadException(null, null, "Couldn't find the enum Keys");
-
-            string[] names = keyEnumType.GetEnumNames();
-            Array values = keyEnumType.GetEnumValues();
+            Array values = Enum.GetValues(typeof(Keys));
+            string[] names = Enum.GetNames(typeof(Keys));
 
             for (int i = 0; i < names.Length; i++) {
                 if (names[i] == key) {
