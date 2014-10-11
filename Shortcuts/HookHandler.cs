@@ -125,125 +125,130 @@ namespace GlobalHotKeys
 
                 log.DebugFormat(debugMessage + "vk: {0}, sc: {1}", keyboardLowLevelData.vkCode, keyboardLowLevelData.scanCode);
 
-                // Modifiers handling:
-                if (Enum.IsDefined(typeof(ModifierVirtualKeyCodes), keyboardLowLevelData.vkCode)) {
-                    // This is a modifier with an non standard scan code. Ignored.
-                    if (!Enum.IsDefined(typeof(ModifierScanCodes), keyboardLowLevelData.scanCode)) {
-                        log.InfoFormat("The scan code ({0}) is not a modifier scan code", keyboardLowLevelData.scanCode);
-                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
-                    }
-
-                    ModifierVirtualKeyCodes virtualModifier = (ModifierVirtualKeyCodes)keyboardLowLevelData.vkCode;
-                    ModifierScanCodes scanModifier = (ModifierScanCodes)keyboardLowLevelData.scanCode;
-
-                    // Modifier virtual code and scan code don't matche. Ignored.
-                    if (!virtualModifier.ToString().EndsWith(scanModifier.ToString())) {
-                        log.WarnFormat("Scan code and virtual key code don't match ({0} != {1})", virtualModifier, scanModifier);
-                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
-                    }
-
-                    switch (virtualModifier) {
-                    case ModifierVirtualKeyCodes.R_ALT:
-                        updateModifierState(ModifierIndexes.ALT, ModifierStates.Right, up);
-                        break;
-                    case ModifierVirtualKeyCodes.L_ALT:
-                        updateModifierState(ModifierIndexes.ALT, ModifierStates.Left, up);
-                        break;
-                    case ModifierVirtualKeyCodes.R_CTRL:
-                        updateModifierState(ModifierIndexes.CTRL, ModifierStates.Right, up);
-                        break;
-                    case ModifierVirtualKeyCodes.L_CTRL:
-                        updateModifierState(ModifierIndexes.CTRL, ModifierStates.Left, up);
-                        break;
-                    case ModifierVirtualKeyCodes.R_SHIFT:
-                        updateModifierState(ModifierIndexes.SHIFT, ModifierStates.Right, up);
-                        break;
-                    case ModifierVirtualKeyCodes.L_SHIFT:
-                        updateModifierState(ModifierIndexes.SHIFT, ModifierStates.Left, up);
-                        break;
-                    case ModifierVirtualKeyCodes.R_META:
-                        updateModifierState(ModifierIndexes.META, ModifierStates.Right, up);
-                        break;
-                    case ModifierVirtualKeyCodes.L_META:
-                        updateModifierState(ModifierIndexes.META, ModifierStates.Left, up);
-                        break;
-                    default:
-                        break;
-                    }
-
-                    log.DebugFormat("Modifiers state: ALT {0}, CTRL {1}, SHIFT {2}, META {3}", mModifierStates[(uint)ModifierIndexes.ALT], mModifierStates[(uint)ModifierIndexes.CTRL], mModifierStates[(uint)ModifierIndexes.SHIFT], mModifierStates[(uint)ModifierIndexes.META]);
-
-                    foreach (ModifierStates state in mModifierStates) {
-                        if (state != ModifierStates.None) {
-                            log.DebugFormat("Semaphore returned: {0}", mModifierSemaphore.WaitOne(0));
+                try {
+                    // Modifiers handling:
+                    if (Enum.IsDefined(typeof(ModifierVirtualKeyCodes), keyboardLowLevelData.vkCode)) {
+                        // This is a modifier with an non standard scan code. Ignored.
+                        if (!Enum.IsDefined(typeof(ModifierScanCodes), keyboardLowLevelData.scanCode)) {
+                            log.InfoFormat("The scan code ({0}) is not a modifier scan code", keyboardLowLevelData.scanCode);
                             return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
                         }
+
+                        ModifierVirtualKeyCodes virtualModifier = (ModifierVirtualKeyCodes)keyboardLowLevelData.vkCode;
+                        ModifierScanCodes scanModifier = (ModifierScanCodes)keyboardLowLevelData.scanCode;
+
+                        // Modifier virtual code and scan code don't matche. Ignored.
+                        if (!virtualModifier.ToString().EndsWith(scanModifier.ToString())) {
+                            log.WarnFormat("Scan code and virtual key code don't match ({0} != {1})", virtualModifier, scanModifier);
+                            return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                        }
+
+                        switch (virtualModifier) {
+                        case ModifierVirtualKeyCodes.R_ALT:
+                            updateModifierState(ModifierIndexes.ALT, ModifierStates.Right, up);
+                            break;
+                        case ModifierVirtualKeyCodes.L_ALT:
+                            updateModifierState(ModifierIndexes.ALT, ModifierStates.Left, up);
+                            break;
+                        case ModifierVirtualKeyCodes.R_CTRL:
+                            updateModifierState(ModifierIndexes.CTRL, ModifierStates.Right, up);
+                            break;
+                        case ModifierVirtualKeyCodes.L_CTRL:
+                            updateModifierState(ModifierIndexes.CTRL, ModifierStates.Left, up);
+                            break;
+                        case ModifierVirtualKeyCodes.R_SHIFT:
+                            updateModifierState(ModifierIndexes.SHIFT, ModifierStates.Right, up);
+                            break;
+                        case ModifierVirtualKeyCodes.L_SHIFT:
+                            updateModifierState(ModifierIndexes.SHIFT, ModifierStates.Left, up);
+                            break;
+                        case ModifierVirtualKeyCodes.R_META:
+                            updateModifierState(ModifierIndexes.META, ModifierStates.Right, up);
+                            break;
+                        case ModifierVirtualKeyCodes.L_META:
+                            updateModifierState(ModifierIndexes.META, ModifierStates.Left, up);
+                            break;
+                        default:
+                            break;
+                        }
+
+                        log.DebugFormat("Modifiers state: ALT {0}, CTRL {1}, SHIFT {2}, META {3}", mModifierStates[(uint)ModifierIndexes.ALT], mModifierStates[(uint)ModifierIndexes.CTRL], mModifierStates[(uint)ModifierIndexes.SHIFT], mModifierStates[(uint)ModifierIndexes.META]);
+
+                        foreach (ModifierStates state in mModifierStates) {
+                            if (state != ModifierStates.None) {
+                                log.DebugFormat("Semaphore returned: {0}", mModifierSemaphore.WaitOne(0));
+                                return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                            }
+                        }
+
+                        // Prevents the semaphore from being full... in case a modifier is released 2 times!?
+                        mModifierSemaphore.WaitOne(0);
+                        mModifierSemaphore.Release();
+                        log.Debug("Unlocked modifier semaphore");
+                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
                     }
 
-                    // Prevents the semaphore from being full... in case a modifier is released 2 times!?
-                    mModifierSemaphore.WaitOne(0);
-                    mModifierSemaphore.Release();
-                    log.Debug("Unlocked modifier semaphore");
-                    return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
-                }
+                    int id = 0;
+                    uint keyHash = ShortcutData.getKeyHashCode(keyboardLowLevelData.vkCode);
+                    // The key is not known. Ignoring shortcut.
+                    if (keyHash == 0)
+                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
 
-                int id = 0;
-                uint keyHash = ShortcutData.getKeyHashCode(keyboardLowLevelData.vkCode);
-                // The key is not known. Ignoring shortcut.
-                if (keyHash == 0)
-                    return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                    /* Shortcuts are executed when releasing the key but the modifiers are saved when pressing the key
+                     * So that even when the user releases the key in a bad order, the command is executed 
+                     */
+                    if (!up)
+                        mSavedModifierStates = (ModifierStates[])mModifierStates.Clone();
 
-                /* Shortcuts are executed when releasing the key but the modifiers are saved when pressing the key
-                 * So that even when the user releases the key in a bad order, the command is executed 
-                 */
-                if (!up)
-                    mSavedModifierStates = (ModifierStates[])mModifierStates.Clone();
+                    if (mSavedModifierStates == null)
+                        mSavedModifierStates = mModifierStates;
 
-                if (mSavedModifierStates == null)
-                    mSavedModifierStates = mModifierStates;
+                    /* Tries to lock the mutex so that the other thread cannot modify the list of keycombinations.
+                     * If the attempt does not succeed, then the mutex is owned by the other thread.
+                     * In this case it should not wait and the shortcut is ignored.
+                     */
+                    if (!mKeyCombinationsMutex.WaitOne(10))
+                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
 
-                /* Tries to lock the mutex so that the other thread cannot modify the list of keycombinations.
-                 * If the attempt does not succeed, then the mutex is owned by the other thread.
-                 * In this case it should not wait and the shortcut is ignored.
-                 */
-                if (!mKeyCombinationsMutex.WaitOne(10))
-                    return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                    // TODO: This is not optimal.
+                    foreach (int modifierFlag in new int[] { 0, 1, 2, 4, 8, 3, 5, 9, 6, 10, 12, 7, 11, 13, 14, 15 }) {
+                        uint modifierHash = 0;
+                        for (int m = 0; m < (uint)ModifierIndexes.Count; m++) {
+                            if ((modifierFlag & (1 << m)) == 0)
+                                modifierHash |= ((uint)(mSavedModifierStates[m] | mModifierStates[m]) << 2 * m);
+                            else
+                                modifierHash |= (((mSavedModifierStates[m] | mModifierStates[m]) != ModifierStates.None ? (uint)3 : (uint)0) << 2 * m);
+                        }
 
-                // TODO: This is not optimal.
-                foreach (int modifierFlag in new int[] { 0, 1, 2, 4, 8, 3, 5, 9, 6, 10, 12, 7, 11, 13, 14, 15 }) {
-                    uint modifierHash = 0;
-                    for (int m = 0; m < (uint)ModifierIndexes.Count; m++) {
-                        if ((modifierFlag & (1 << m)) == 0)
-                            modifierHash |= ((uint)(mSavedModifierStates[m] | mModifierStates[m]) << 2 * m);
-                        else
-                            modifierHash |= (((mSavedModifierStates[m] | mModifierStates[m]) != ModifierStates.None ? (uint)3 : (uint)0) << 2 * m);
+                        id = mKeyCombinations[modifierHash + 256 * (keyHash - 1)];
+                        if (id != 0)
+                            break;
                     }
 
-                    id = mKeyCombinations[modifierHash + 256 * (keyHash - 1)];
-                    if (id != 0)
-                        break;
-                }
+                    mKeyCombinationsMutex.ReleaseMutex();
 
-                mKeyCombinationsMutex.ReleaseMutex();
+                    // No shortcut associated with this key combination:
+                    if (id == 0)
+                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                    // Key was pressed. Shortcut are executed when key is released:
+                    if (!up)
+                        return User32.SUCCESS;
 
-                // No shortcut associated with this key combination:
-                if (id == 0)
-                    return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
-                // Key was pressed. Shortcut are executed when key is released:
-                if (!up)
+                    uint messageModifierHash = 0;
+                    for (int m = 0; m < (uint)ModifierIndexes.Count; m++)
+                        messageModifierHash |= (((mSavedModifierStates[m] | mModifierStates[m]) != ModifierStates.None ? (uint)1 : (uint)0) << m);
+
+                    // Clears saved modifiers state:
+                    mSavedModifierStates = null;
+
+                    log.Info("Got shortcut id=" + id);
+
+                    User32.PostMessage(IntPtr.Zero, User32.WM_HOTKEY, new IntPtr(id), new IntPtr(((int)messageModifierHash << 32) + keyboardLowLevelData.vkCode));
                     return User32.SUCCESS;
-
-                uint messageModifierHash = 0;
-                for (int m = 0; m < (uint)ModifierIndexes.Count; m++)
-                    messageModifierHash |= (((mSavedModifierStates[m] | mModifierStates[m]) != ModifierStates.None ? (uint)1 : (uint)0) << m);
-
-                // Clears saved modifiers state:
-                mSavedModifierStates = null;
-
-                log.Info("Got shortcut id=" + id);
-
-                User32.PostMessage(IntPtr.Zero, User32.WM_HOTKEY, new IntPtr(id), new IntPtr(((int)messageModifierHash << 32) + keyboardLowLevelData.vkCode));
-                return User32.SUCCESS;
+                } catch (Exception e) {
+                    log.Fatal("Unhandled exception in low-level keyboard hook", e);
+                    return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                }
             }
 
 
