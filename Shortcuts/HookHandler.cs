@@ -180,6 +180,8 @@ namespace GlobalHotKeys
                         }
                     }
 
+                    // Prevents the semaphore from being full... in case a modifier is released 2 times!?
+                    mModifierSemaphore.WaitOne(0);
                     mModifierSemaphore.Release();
                     log.Debug("Unlocked modifier semaphore");
                     return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
