@@ -104,6 +104,10 @@ namespace GlobalHotKeys
 
                 log.InfoFormat("Called Power.Manager.lockScreen()");
 
+                log.Debug("Waiting mutex release before screen lock.");
+                Shortcuts.Handler handler = Shortcuts.Handler.getInstance();
+                if (handler != null)
+                    handler.waitModifiersReleased();
                 User32.LockWorkStation();
             }
         }

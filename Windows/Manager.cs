@@ -173,6 +173,11 @@ namespace GlobalHotKeys
 
             static private void startProcess(ProcessData processData)
             {
+                log.Debug("Waiting mutex release before process start.");
+                Shortcuts.Handler handler = Shortcuts.Handler.getInstance();
+                if (handler != null)
+                    handler.waitModifiersReleased();
+
                 log.Info("Starting process: " + processData.ExePath);
 
                 Process process = new Process();
