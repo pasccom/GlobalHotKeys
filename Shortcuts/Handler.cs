@@ -199,28 +199,47 @@ namespace GlobalHotKeys
                 workerThread.Start();
 
                 User32.MSG msg;
-                while (User32.GetMessage(out msg, IntPtr.Zero, 0, 0)) {
-                    if (msg.message != User32.WM_HOTKEY) {
-                        log.Warn("Unhandled message received: " + msg.message);
-                        continue;
-                    }
+                sbyte ans;
+                int consecutiveErrorCount = 0;
 
-                    /* Retrive id.
-                     * NOTE Different versions of the .NET framework have differents settings for the wParam internal type:
-                     *  -4.0: wParam is pointer to a UInt64.
-                     *  -4.5: wParam is pointer to a UInt32.
-                     */
+                while ((ans = User32.GetMessage(out msg, IntPtr.Zero, 0, 0)) != 0) {
                     int id;
-                    if ((Environment.Version.Major == 4) && (Environment.Version.Minor == 5)) {
-                        id = (int)msg.wParam.ToUInt32();
-                    } else if ((Environment.Version.Major == 4) && (Environment.Version.Minor == 0)) {
-                        id = (int)((long)msg.wParam.ToUInt64());
-                    } else {
-                        log.ErrorFormat("Your version of the frameWork ({0}) is not supported. Exiting.", Environment.Version);
-                        break;
-                    }
 
-                    log.Info("Got hotkey: id=" + id);
+                    // Check for errors in GetMessage
+                    if (ans == -1) {
+                        log.ErrorFormat("GetMessage error. Code: {0}", User32.GetLastError());
+                        log.InfoFormat("There where {0} consecutive errors in GetMessage", consecutiveErrorCount);
+                        consecutiveErrorCount++;
+                        // This prevents looping in case error is reccurant.
+                        if (consecutiveErrorCount == 10)
+                            id = -1;
+                        else
+                            continue;
+                    } else {
+                        consecutiveErrorCount = 0;
+
+                        // Filters the messages (normally only get WM_HOTKEY, but who never knows?
+                        if (msg.message != User32.WM_HOTKEY) {
+                            log.Warn("Unhandled message received: " + msg.message);
+                            continue;
+                        }
+
+                        /* Retrive id.
+                            * NOTE Different versions of the .NET framework have differents settings for the wParam internal type:
+                            *  -4.0: wParam is pointer to a UInt64.
+                            *  -4.5: wParam is pointer to a UInt32.
+                            */
+                        if ((Environment.Version.Major == 4) && (Environment.Version.Minor == 5)) {
+                            id = (int)msg.wParam.ToUInt32();
+                        } else if ((Environment.Version.Major == 4) && (Environment.Version.Minor == 0)) {
+                            id = (int)((long)msg.wParam.ToUInt64());
+                        } else {
+                            log.ErrorFormat("Your version of the frameWork ({0}) is not supported. Exiting.", Environment.Version);
+                            break;
+                        }
+
+                        log.Info("Got hotkey: id=" + id);
+                    }
 
                     lock(mActionQueue) {
                         mActionQueue.Enqueue(id);

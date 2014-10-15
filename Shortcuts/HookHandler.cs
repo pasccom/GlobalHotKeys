@@ -73,11 +73,17 @@ namespace GlobalHotKeys
 
                 mHookCallbackHandle = new User32.HookProc(keyboardLowLevelHookCallback);
                 mHookHandle = User32.SetWindowsHookEx(User32.HookType.WH_KEYBOARD_LL, mHookCallbackHandle, IntPtr.Zero, 0);
+
+                if (mHookHandle == IntPtr.Zero) {
+                    log.ErrorFormat("SetWindowsHookEx error. Code: {0}", User32.GetLastError());
+                    throw new ApplicationException("Installing hook failed. See previous message for the code");
+                }
             }
 
             ~HookHandler()
             {
-                User32.UnhookWindowsHookEx(mHookHandle);
+                if (!User32.UnhookWindowsHookEx(mHookHandle))
+                    log.ErrorFormat("UnhookWindowsHookEx error. Code: {0}", User32.GetLastError());
                 mHookCallbackHandle = null;
             }
 
@@ -243,7 +249,11 @@ namespace GlobalHotKeys
 
                     log.Info("Got shortcut id=" + id);
 
-                    User32.PostMessage(IntPtr.Zero, User32.WM_HOTKEY, new IntPtr(id), new IntPtr(((int)messageModifierHash << 32) + keyboardLowLevelData.vkCode));
+                    if (!User32.PostMessage(IntPtr.Zero, User32.WM_HOTKEY, new IntPtr(id), new IntPtr(((int)messageModifierHash << 32) + keyboardLowLevelData.vkCode))) {
+                        log.ErrorFormat("PostMessage error. Code: {0}", User32.GetLastError());
+                        log.Info("Ignoring shortcut");
+                        return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+                    }
                     return User32.SUCCESS;
                 } catch (Exception e) {
                     log.Fatal("Unhandled exception in low-level keyboard hook", e);
