@@ -35,25 +35,31 @@ namespace GlobalHotKeys
 
             internal delegate bool EnumWindowsCallback(IntPtr winHandle, IntPtr callbackParam);
 
+            internal static int GetLastError()
+            {
+                return Marshal.GetLastWin32Error();
+            }
+
             [DllImport("user32.dll")]
             internal static extern bool EnumThreadWindows(int tId, EnumWindowsCallback callback, IntPtr callbackParam);
 
             [DllImport("user32.dll")]
             internal static extern bool ShowWindow(IntPtr winHandle, int cmd);
 
+            // TODO: This function seems not to work properly on windows 7... See trick on pinvoke.net
             [DllImport("user32.dll")]
             internal static extern bool SetForegroundWindow(IntPtr winHandle);
            
             [DllImport("user32.dll")]
             internal static extern bool IsWindowVisible(IntPtr winHandle);
 
-            [DllImport("user32.dll")]
+            [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
             internal static extern int GetWindowText(IntPtr winHandle, StringBuilder title, int len);
 
-            [DllImport("user32.dll")]
+            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
             internal static extern int GetWindowTextLength(IntPtr winHandle);
 
-            [DllImport("user32.dll")]
+            [DllImport("user32.dll", SetLastError = true)]
             internal static extern bool GetWindowRect(IntPtr winHandle, out Rect rect);
         }
     }
