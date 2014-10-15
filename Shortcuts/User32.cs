@@ -70,10 +70,10 @@ namespace GlobalHotKeys
                 SYSKEYUP = 0x0105,
             }
 
-            [DllImport("user32.dll")]
-            internal static extern bool GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+            [DllImport("user32.dll", SetLastError=true)]
+            internal static extern sbyte GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
 
-            [DllImport("user32.dll")]
+            [DllImport("user32.dll", SetLastError=true)]
             internal static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
             internal delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
@@ -83,13 +83,18 @@ namespace GlobalHotKeys
                 return (KeyboardLowLevelHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyboardLowLevelHookStruct));
             }
 
-            [DllImport("user32.dll")]
+            internal static int GetLastError()
+            {
+                return Marshal.GetLastWin32Error();
+            }
+
+            [DllImport("user32.dll", SetLastError=true)]
             internal static extern IntPtr SetWindowsHookEx(HookType hookType, HookProc lpfn, IntPtr hMod, uint dwThreadId);
 
             [DllImport("user32.dll")]
             internal static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
-            [DllImport("user32.dll")]
+            [DllImport("user32.dll", SetLastError=true)]
             internal static extern bool UnhookWindowsHookEx(IntPtr hhk);
         }
     }
