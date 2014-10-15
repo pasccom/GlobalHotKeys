@@ -146,7 +146,7 @@ namespace GlobalHotKeys
             {
                 User32.Rect rect = new User32.Rect();
                 if (!User32.GetWindowRect(winHandle, out rect))
-                    throw new ApplicationException("Method failed"); // TODO improve it!
+                    throw new ApplicationException("Could not get window position. Error code: " + User32.GetLastError());
 
                 return ((rect.Top == -32000) && (rect.Left == -32000));
             }
@@ -218,8 +218,12 @@ namespace GlobalHotKeys
 
                         // Gets the window title:
                         int len1 = User32.GetWindowTextLength(winHandle);
+                        if (len1 == 0)
+                            throw new ApplicationException("Could not get window text length. Error code: " + User32.GetLastError()); 
                         StringBuilder buffer = new StringBuilder(len1 + 1);
                         int len2 = User32.GetWindowText(winHandle, buffer, len1 + 1);
+                        if (len2 == 0)
+                            throw new ApplicationException("Could not get window text. Error code: " + User32.GetLastError()); 
                         if (len1 != len2)
                             throw new ApplicationException("Lengths should match (" + len1 + " != " + len2 + ")"); 
 
@@ -244,8 +248,12 @@ namespace GlobalHotKeys
 
                         // Gets the window title:
                         int len1 = User32.GetWindowTextLength(winHandle);
+                        if (len1 == 0)
+                            throw new ApplicationException("Could not get window text length. Error code: " + User32.GetLastError()); 
                         StringBuilder buffer = new StringBuilder(len1 + 1);
                         int len2 = User32.GetWindowText(winHandle, buffer, len1 + 1);
+                        if (len2 == 0)
+                            throw new ApplicationException("Could not get window text. Error code: " + User32.GetLastError()); 
                         if (len1 != len2)
                             throw new ApplicationException("Lengths should match (" + len1 + " != " + len2 + ")"); 
 
