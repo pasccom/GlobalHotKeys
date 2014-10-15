@@ -108,7 +108,8 @@ namespace GlobalHotKeys
                 Shortcuts.Handler handler = Shortcuts.Handler.getInstance();
                 if (handler != null)
                     handler.waitModifiersReleased();
-                User32.LockWorkStation();
+                if (!User32.LockWorkStation())
+                    throw new ApplicationException("Failed to lock the screen. Error code: " + User32.GetLastError());
             }
         }
     }

@@ -7,8 +7,13 @@ namespace GlobalHotKeys
     {
         class User32
         {
-            [DllImport("user32")]
-            internal static extern void LockWorkStation();
+            [DllImport("user32", SetLastError=true)]
+            internal static extern bool LockWorkStation();
+
+            internal static int GetLastError()
+            {
+                return Marshal.GetLastWin32Error();
+            }
         }
     }
 }
