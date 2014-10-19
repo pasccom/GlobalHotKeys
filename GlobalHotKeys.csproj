@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{954B10F0-1A13-4D09-A155-97044B55FFB3}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GlobalHotKeys</RootNamespace>
     <AssemblyName>GlobalHotKeys</AssemblyName>
@@ -97,6 +97,7 @@
     <Compile Include="Shortcuts\UnautorizedShortcutException.cs" />
     <Compile Include="Shortcuts\User32.cs" />
     <Compile Include="Power\User32.cs" />
+    <Compile Include="Windows\Kernel32.cs" />
     <Compile Include="Windows\Manager.cs" />
     <Compile Include="Windows\PlainTextConfig.cs" />
     <Compile Include="Windows\ProcessData.cs" />

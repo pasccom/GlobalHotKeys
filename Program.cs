@@ -38,18 +38,18 @@ namespace GlobalHotKeys
             app.exec();
         }
 
-        private static void setQuiet()
+        private static void setDebug()
         {
             Hierarchy repo = LogManager.GetRepository() as Hierarchy;
             if (repo == null)
                 return;
 
-            repo.Root.RemoveAppender("Console");
+            repo.Root.Level = Level.Debug;
 
             foreach (ILogger iLogger in repo.GetCurrentLoggers()) {
                 Logger logger = iLogger as Logger;
                 if (logger != null)
-                    logger.RemoveAppender("Console");
+                    logger.Level = Level.Debug;
             }
         }
 
@@ -60,11 +60,11 @@ namespace GlobalHotKeys
 
             AppenderCollection appenders = logger.Appenders;
             for (int i = 0; i < appenders.Count; i++)
-                if ((appenders[i].Name != "WindowsEventLog") && (appenders[i].Name != "Console"))
+                if (appenders[i].Name != "WindowsEventLog")
                     logger.RemoveAppender(appenders[i]);
         }
 
-        private static void setRelease()
+        private static void setQuiet()
         {
             Hierarchy repo = LogManager.GetRepository() as Hierarchy;
             if (repo == null)
@@ -98,6 +98,7 @@ namespace GlobalHotKeys
 
 #if DEBUG
             log4net.GlobalContext.Properties["LogFilePath"] = System.IO.Path.GetTempPath() + @"\Pascom\GlobalHotKeys\Debug";
+            debuging = true;
 #else
             log4net.GlobalContext.Properties["LogFilePath"] = System.IO.Path.GetTempPath() + @"\Pascom\GlobalHotKeys\Release";
 #endif
@@ -105,8 +106,8 @@ namespace GlobalHotKeys
 
             if (quiet)
                 setQuiet();
-            if (!debuging)
-                setRelease();
+            if (debuging)
+                setDebug();
             log = LogManager.GetLogger(typeof(Program));
 
             try {
