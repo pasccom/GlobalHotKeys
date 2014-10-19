@@ -157,16 +157,16 @@ namespace GlobalHotKeys
                 case User32.ShowState.Restore:
                     if (isMiniMized(winHandle))
                         User32.ShowWindow(winHandle, (int) User32.ShowState.Normal);
-                    User32.SetForegroundWindow(winHandle);
+                    User32.SetForeground(winHandle);
                     break;
                 case User32.ShowState.Maximize:
                     if (isMiniMized(winHandle))
                         User32.ShowWindow(winHandle, (int) User32.ShowState.ShowMaximized);
-                    User32.SetForegroundWindow(winHandle);
+                    User32.SetForeground(winHandle);
                     break;
                 default:
                     User32.ShowWindow(winHandle, (int) sizeFlag);
-                    User32.SetForegroundWindow(winHandle);
+                    User32.SetForeground(winHandle);
                     break;
                 }
             }

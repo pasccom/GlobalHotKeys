@@ -43,13 +43,52 @@ namespace GlobalHotKeys
             [DllImport("user32.dll")]
             internal static extern bool EnumThreadWindows(int tId, EnumWindowsCallback callback, IntPtr callbackParam);
 
+            [DllImport("user32.dll", SetLastError=true)]
+            internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
+
+            [DllImport("user32.dll", SetLastError=true)]
+            static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool attach);
+
             [DllImport("user32.dll")]
             internal static extern bool ShowWindow(IntPtr winHandle, int cmd);
 
-            // TODO: This function seems not to work properly on windows 7... See trick on pinvoke.net
             [DllImport("user32.dll")]
-            internal static extern bool SetForegroundWindow(IntPtr winHandle);
-           
+            private static extern IntPtr GetForegroundWindow();
+
+            [DllImport("user32.dll")]
+            private static extern bool SetForegroundWindow(IntPtr winHandle);
+
+            [DllImport("user32.dll", SetLastError = true)]
+            private static extern bool BringWindowToTop(IntPtr winHandle);
+
+            // The SetForegroundWindow() function seems not to work properly on windows 7
+            // So this code does not work properly. Sometimes the windows gets only activated.
+            // A trick from pinvoke.net follows.
+            internal static void SetForeground(IntPtr winHandle)
+            {
+                uint foregroundWindowThread = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero);
+                uint thisThread = Kernel32.GetCurrentThreadId();
+                bool attached = true;
+
+                if (foregroundWindowThread == 0)
+                    throw new ApplicationException("Could not retrieve forgreound window owner thread. Error code: " + GetLastError());
+
+                if ((foregroundWindowThread != thisThread) && !AttachThreadInput(foregroundWindowThread, thisThread, true))
+                    attached = false;
+                    //throw new ApplicationException("Could not attach to the foreground window thread. Error code: " + GetLastError());
+
+                if (attached) {
+                    if (!BringWindowToTop(winHandle))
+                        throw new ApplicationException("BringWindowToTop() failed. Error code: " + GetLastError());
+                } else {
+                    if (!SetForegroundWindow(winHandle))
+                        throw new ApplicationException("SetForegroundWindow() failded.");
+                }
+
+                if (attached && (foregroundWindowThread != thisThread) && !AttachThreadInput(foregroundWindowThread, thisThread, false))
+                    throw new ApplicationException("Could not detach from the foreground window thread. Error code: " + GetLastError());
+            }
+
             [DllImport("user32.dll")]
             internal static extern bool IsWindowVisible(IntPtr winHandle);
 
