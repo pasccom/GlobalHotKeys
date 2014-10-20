@@ -111,6 +111,8 @@ namespace GlobalHotKeys
                 if (args.Count != 0)
                     throw new BadArgumentCountException("resetShortcuts() admits no arguments", 0);
 
+                log.Info("Called Shortcuts.Handler.resetShortcuts()");
+
                 resetShortcuts();
 
                 mCurrentShortcutsList = mDefaultShortcutsList;
@@ -123,6 +125,8 @@ namespace GlobalHotKeys
                     throw new BadArgumentCountException("loadConfig(path) needs 1 argument", 1);
 
                 string path = args[1];
+
+                log.InfoFormat("Called Shortcuts.Handler.loadConfig({0})", path);
 
                 resetShortcuts();
 
