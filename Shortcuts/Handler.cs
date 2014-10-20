@@ -40,7 +40,7 @@ namespace GlobalHotKeys
                     /* NOTE exit and reset are phantom methods, needed for the implementation of special shortcuts.
                      * Trying to call these will fail.
                      */
-                    return new List<string>() { "exit", "reset", "resetShortcuts", "loadConfig" };
+                    return new List<string>() { "exit", "reset", "resetShortcuts", "loadConfig", "noop" };
                 }
             }
 
@@ -96,6 +96,14 @@ namespace GlobalHotKeys
             ~Handler()
             {
                 mHookHandler.reset();
+            }
+
+            public void noop(List<string> args)
+            {
+                if (args.Count != 0)
+                    throw new BadArgumentCountException("noop() admits no arguments", 0);
+
+                log.Info("Called Shortcuts.Handler.noop()");
             }
 
             public void resetShortcuts(List<string> args)
