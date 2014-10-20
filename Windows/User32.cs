@@ -16,6 +16,53 @@ namespace GlobalHotKeys
                 public int Bottom;
             }
 
+            internal struct Input
+            {
+                internal InputType type;
+                internal InputUnion data;
+                internal static int Size
+                {
+                    get { return Marshal.SizeOf(typeof(Input)); }
+                }
+            }
+
+            [StructLayout(LayoutKind.Explicit)]
+            internal struct InputUnion
+            {
+                [FieldOffset(0)]
+                internal MouseInput mInput;
+                [FieldOffset(0)]
+                internal KeyboardInput kInput;
+                [FieldOffset(0)]
+                internal HardwareInput hInput;
+            }
+
+            internal struct MouseInput
+            {
+                internal int dx;
+                internal int dy;
+                internal int mouseData;
+                internal MouseEventFlags flags;
+                internal uint time;
+                internal UIntPtr extraInfo;
+            }
+
+            internal struct KeyboardInput
+            {
+                internal short virtualCode;
+                internal short scanCode;
+                internal KeyboardEventFlags flags;
+                internal int time;
+                internal UIntPtr extraInfo;
+            }
+
+            internal struct HardwareInput
+            {
+                internal int message;
+                internal short lowParam;
+                internal short highParam;
+            }
+
             internal enum ShowState
             {
                 //Hide = 0, /*!< Hides the window and activates another window. */
@@ -33,6 +80,39 @@ namespace GlobalHotKeys
                 //ShowForceMinimize = 11; /*!< Minimizes a window, even if the thread that owns the window is not responding. This flag should only be used when minimizing windows from a different thread. */
             }
 
+            internal enum InputType : uint
+            {
+                MOUSE = 0, /*!< The event is a mouse event. Use the mi structure of the union. */
+                KEYBOARD = 1, /*!< The event is a keyboard event. Use the ki structure of the union. */
+                HARDWARE = 2 /*!< The event is a hardware event. Use the hi structure of the union. */
+            }
+
+            internal enum MouseEventFlags : uint
+            {
+                ABSOLUTE = 0x8000,
+                HWHEEL = 0x01000,
+                MOVE = 0x0001,
+                MOVE_NOCOALESCE = 0x2000,
+                LEFTDOWN = 0x0002,
+                LEFTUP = 0x0004,
+                RIGHTDOWN = 0x0008,
+                RIGHTUP = 0x0010,
+                MIDDLEDOWN = 0x0020,
+                MIDDLEUP = 0x0040,
+                VIRTUALDESK = 0x4000,
+                WHEEL = 0x0800,
+                XDOWN = 0x0080,
+                XUP = 0x0100
+            }
+
+            internal enum KeyboardEventFlags : uint
+            {
+                EXTENDEDKEY = 0x0001,
+                KEYUP = 0x0002,
+                SCANCODE = 0x0008,
+                UNICODE = 0x0004
+            }
+
             internal delegate bool EnumWindowsCallback(IntPtr winHandle, IntPtr callbackParam);
 
             internal static int GetLastError()
@@ -48,6 +128,9 @@ namespace GlobalHotKeys
 
             [DllImport("user32.dll", SetLastError=true)]
             static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool attach);
+
+            [DllImport("user32.dll")]
+            internal static extern uint SendInput(uint nInputs, Input[] pInputs, int cbSize);
 
             [DllImport("user32.dll")]
             internal static extern bool ShowWindow(IntPtr winHandle, int cmd);
