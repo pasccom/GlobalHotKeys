@@ -28,7 +28,7 @@ namespace GlobalHotKeys
             {
                 get
                 {
-                    return new List<string>() { "activate", "start", "focus" };
+                    return new List<string>() { "activate", "start", "focus", "sendKeys" };
                 }
             }
 
@@ -42,7 +42,7 @@ namespace GlobalHotKeys
                 string title = null;
                 if (args.Count >= 3)
                     title = args[2];
-                
+
                 log.InfoFormat("Called Windows.Manager.activate({0}, \"{1}\", \"{2}\")", sizeFlag, processName, title);
 
                 ProcessData process = mProcessessList[processName];
@@ -123,14 +123,39 @@ namespace GlobalHotKeys
                 startProcess(mProcessessList[processName]);
             }
 
+            static public void sendKeys(List<string> args)
+            {
+                if (args.Count != 1)
+                    throw new Shortcuts.BadArgumentCountException("sendKey(keys) needs 1 argument.", 1, 1);
+
+                log.InfoFormat("Called Shortcuts.Handler.sendKey({0})", args[0]);
+
+                User32.Input[] keyEvents = new User32.Input[args[0].Length];
+
+                for (int c = 0; c < args[0].Length; c++) {
+                    log.DebugFormat("Sending unicode: 0x{0:X4}", (short)args[0][c]);
+                    keyEvents[c].type = User32.InputType.KEYBOARD;
+                    keyEvents[c].data = new User32.InputUnion();
+                    keyEvents[c].data.kInput = new User32.KeyboardInput();
+                    keyEvents[c].data.kInput.extraInfo = UIntPtr.Zero;
+                    keyEvents[c].data.kInput.time = 0;
+                    keyEvents[c].data.kInput.flags = User32.KeyboardEventFlags.UNICODE;
+                    keyEvents[c].data.kInput.virtualCode = 0;
+                    keyEvents[c].data.kInput.scanCode = (short)args[0][c];
+                }
+
+                if (User32.SendInput((uint)args[0].Length, keyEvents, User32.Input.Size) != 1)
+                    throw new ApplicationException("Could not send the key to application. Error code: " + User32.GetLastError());
+            }
+
             static private User32.ShowState parseSize(String sizeName)
             {
-                bool bad = sizeName.Contains(",");    
-                
+                bool bad = sizeName.Contains(",");
+
                 try {
                     int.Parse(sizeName);
                     bad = true;
-                } catch (Exception) {}
+                } catch (Exception) { }
 
                 if (bad)
                     throw new ArgumentException("The size argument should not contain commas or be a number.");
@@ -153,19 +178,19 @@ namespace GlobalHotKeys
 
             static private void activate(IntPtr winHandle, User32.ShowState sizeFlag)
             {
-                switch(sizeFlag) {
+                switch (sizeFlag) {
                 case User32.ShowState.Restore:
                     if (isMiniMized(winHandle))
-                        User32.ShowWindow(winHandle, (int) User32.ShowState.Normal);
+                        User32.ShowWindow(winHandle, (int)User32.ShowState.Normal);
                     User32.SetForeground(winHandle);
                     break;
                 case User32.ShowState.Maximize:
                     if (isMiniMized(winHandle))
-                        User32.ShowWindow(winHandle, (int) User32.ShowState.ShowMaximized);
+                        User32.ShowWindow(winHandle, (int)User32.ShowState.ShowMaximized);
                     User32.SetForeground(winHandle);
                     break;
                 default:
-                    User32.ShowWindow(winHandle, (int) sizeFlag);
+                    User32.ShowWindow(winHandle, (int)sizeFlag);
                     User32.SetForeground(winHandle);
                     break;
                 }
@@ -219,13 +244,13 @@ namespace GlobalHotKeys
                         // Gets the window title:
                         int len1 = User32.GetWindowTextLength(winHandle);
                         if (len1 == 0)
-                            throw new ApplicationException("Could not get window text length. Error code: " + User32.GetLastError()); 
+                            throw new ApplicationException("Could not get window text length. Error code: " + User32.GetLastError());
                         StringBuilder buffer = new StringBuilder(len1 + 1);
                         int len2 = User32.GetWindowText(winHandle, buffer, len1 + 1);
                         if (len2 == 0)
-                            throw new ApplicationException("Could not get window text. Error code: " + User32.GetLastError()); 
+                            throw new ApplicationException("Could not get window text. Error code: " + User32.GetLastError());
                         if (len1 != len2)
-                            throw new ApplicationException("Lengths should match (" + len1 + " != " + len2 + ")"); 
+                            throw new ApplicationException("Lengths should match (" + len1 + " != " + len2 + ")");
 
                         // Check if it matches:
                         Regex regexp = new Regex(title);
@@ -249,13 +274,13 @@ namespace GlobalHotKeys
                         // Gets the window title:
                         int len1 = User32.GetWindowTextLength(winHandle);
                         if (len1 == 0)
-                            throw new ApplicationException("Could not get window text length. Error code: " + User32.GetLastError()); 
+                            throw new ApplicationException("Could not get window text length. Error code: " + User32.GetLastError());
                         StringBuilder buffer = new StringBuilder(len1 + 1);
                         int len2 = User32.GetWindowText(winHandle, buffer, len1 + 1);
                         if (len2 == 0)
-                            throw new ApplicationException("Could not get window text. Error code: " + User32.GetLastError()); 
+                            throw new ApplicationException("Could not get window text. Error code: " + User32.GetLastError());
                         if (len1 != len2)
-                            throw new ApplicationException("Lengths should match (" + len1 + " != " + len2 + ")"); 
+                            throw new ApplicationException("Lengths should match (" + len1 + " != " + len2 + ")");
 
                         Console.WriteLine(buffer);
 
