@@ -203,10 +203,10 @@ namespace GlobalHotKeys
                 if (handler != null)
                     handler.waitModifiersReleased();
 
-                log.Info("Starting process: " + processData.ExePath);
+                log.Info("Starting process: " + processData.StartPath);
 
                 Process process = new Process();
-                process.StartInfo.FileName = processData.ExePath;
+                process.StartInfo.FileName = processData.StartPath;
                 process.StartInfo.Arguments = String.Join<string>(" ", processData.StartArguments);
                 process.StartInfo.WorkingDirectory = processData.StartFolder;
                 process.StartInfo.UseShellExecute = processData.Shell;
