@@ -4,6 +4,10 @@
 # Ignore binary reference folder:
 lib/
 
-# Ignores build folders
+# Ignores output folders:
 bin/
 obj/
+doc/
+
+# Temporary files:
+*Temporaire*
