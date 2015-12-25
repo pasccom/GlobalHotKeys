@@ -4,45 +4,62 @@ using System.Collections.Generic;
 
 namespace GlobalHotKeys
 {
+    /// <summary>
+    ///     Describes a shortcut.
+    /// </summary>
+    /// <para>
+    ///     This class describes a shortcut and defines the functions to create and work with shortcuts.
+    ///     It thus contains the key combination which triggers the shortcut (<see cref="Modifier"/> and <see cref="Key"/>)
+    ///     as well as the needed information to invoke the method (<see cref="Class"/>, <see cref="Method"/> and <see cref="Params"/>).
+    ///     It also defines the list of supported <see cref="Keys"/> and supported <see cref="Modifiers"/> 
+    ///     as well as some special default shortcuts (<see cref="exitShortcut"/> and <see cref="resetShortcut"/>).
+    /// </para>
     class ShortcutData
     {
         /// <summary>
         ///     Enumeration of all supported modifiers.
-        ///     <list type="bullet">
-        ///         <item><term>R_ALT</term> <description>The right ALT key is pressed</description></item>
-        ///         <item><term>L_ALT</term> <description>The left ALT key is pressed</description></item>
-        ///         <item><term>X_ALT</term> <description>Any of the ALT key is pressed</description></item>
-        ///         <item><term>R_CTRL</term> <description>The right CTRL key is pressed</description></item>
-        ///         <item><term>L_CTRL</term> <description>The left CTRL key is pressed</description></item>
-        ///         <item><term>X_CTRL</term> <description>Any of the CTRL key is pressed</description></item>
-        ///         <item><term>R_SHIFT</term> <description>The right Shift key is pressed</description></item>
-        ///         <item><term>L_SHIFT</term> <description>The left Shift key is pressed</description></item>
-        ///         <item><term>X_SHIFT</term> <description>Any of the Shift key is pressed</description></item>
-        ///         <item><term>R_META</term> <description>The right "windows" key is pressed</description></item>
-        ///         <item><term>L_META</term> <description>The left "windows" key is pressed</description></item>
-        ///         <item><term>X_META</term> <description>Any of the "windows" key is pressed</description></item>
-        ///     </list>
         /// </summary>
-        public enum Modifiers { R_ALT = 0x01, L_ALT = 0x02, X_ALT = 0x03,
-                                R_CTRL = 0x04, L_CTRL = 0x08, X_CTRL = 0x0C,
-                                R_SHIFT = 0x10, L_SHIFT = 0x20, X_SHIFT = 0x30,
-                                R_META = 0x40, L_META = 0x80, X_META = 0xC0 }
+        /// <para>List of the supported modifiers</para>
+        /// <list type="table">
+        ///     <item><term>R_ALT</term> <description>The right ALT key is pressed</description></item>
+        ///     <item><term>L_ALT</term> <description>The left ALT key is pressed</description></item>
+        ///     <item><term>X_ALT</term> <description>Any of the ALT key is pressed</description></item>
+        ///     <item><term>R_CTRL</term> <description>The right CTRL key is pressed</description></item>
+        ///     <item><term>L_CTRL</term> <description>The left CTRL key is pressed</description></item>
+        ///     <item><term>X_CTRL</term> <description>Any of the CTRL key is pressed</description></item>
+        ///     <item><term>R_SHIFT</term> <description>The right Shift key is pressed</description></item>
+        ///     <item><term>L_SHIFT</term> <description>The left Shift key is pressed</description></item>
+        ///     <item><term>X_SHIFT</term> <description>Any of the Shift key is pressed</description></item>
+        ///     <item><term>R_META</term> <description>The right "windows" key is pressed</description></item>
+        ///     <item><term>L_META</term> <description>The left "windows" key is pressed</description></item>
+        ///     <item><term>X_META</term> <description>Any of the "windows" key is pressed</description></item>
+        /// </list>
+        public enum Modifiers
+        {
+            R_ALT = 0x01,
+            L_ALT = 0x02, X_ALT = 0x03,
+            R_CTRL = 0x04, L_CTRL = 0x08, X_CTRL = 0x0C,
+            R_SHIFT = 0x10, L_SHIFT = 0x20, X_SHIFT = 0x30,
+            R_META = 0x40, L_META = 0x80, X_META = 0xC0
+        }
+
         /// <summary>
         ///     Enumeration of the supported keys. 
-        ///     <list type="bullet">
-        ///         <item><term>None</term> <description>No key. The shortcut is invalid.</description></item>
-        ///         <item><term>Esc</term> <description>Escape key.</description></item>
-        ///         <item><term>[A-Z]</term> <description>The specified letter is pressed.</description></item>
-        ///         <item><term>Left</term> <description>The left arrow key is pressed.</description></item>
-        ///         <item><term>Up</term> <description>The up arrow key is pressed.</description></item>
-        ///         <item><term>Right</term> <description>The right arrow key is pressed.</description></item>
-        ///         <item><term>Down</term> <description>The down arrow key is pressed.</description></item>
-        ///         <item><term>PgUp</term> <description>The previous page key is pressed.</description></item>
-        ///         <item><term>PgDown</term> <description>The next page key is pressed.</description></item>
-        ///         <item><term>F[1-12]</term> <description>The specified function key is pressed.</description></item>
-        ///         <item><term>N[0-9]</term> <description>The specified numpad key is pressed.</description></item>
-        ///     </list>
         /// </summary>
+        /// <para>List of the supported keys</para>
+        /// <list type="table">
+        ///     <item><term>None</term> <description>No key. The shortcut is invalid.</description></item>
+        ///     <item><term>Esc</term> <description>Escape key.</description></item>
+        ///     <item><term>[A-Z]</term> <description>The specified letter is pressed.</description></item>
+        ///     <item><term>Left</term> <description>The left arrow key is pressed.</description></item>
+        ///     <item><term>Up</term> <description>The up arrow key is pressed.</description></item>
+        ///     <item><term>Right</term> <description>The right arrow key is pressed.</description></item>
+        ///     <item><term>Down</term> <description>The down arrow key is pressed.</description></item>
+        ///     <item><term>PgUp</term> <description>The previous page key is pressed.</description></item>
+        ///     <item><term>PgDown</term> <description>The next page key is pressed.</description></item>
+        ///     <item><term>F[1-12]</term> <description>The specified function key is pressed.</description></item>
+        ///     <item><term>N[0-9]</term> <description>The specified numpad key is pressed.</description></item>
+        /// </list>
         public enum Keys
         {
             None = 0x0, Esc = 0x1B,
@@ -82,6 +99,10 @@ namespace GlobalHotKeys
         /// <para>These parameters will be passed to the method invoked by the shortcut.</para>
         public List<string> Params { get; set; }
 
+        /// <summary>
+        ///     Identifier for the shortcut.
+        /// </summary>
+        /// <remarks>Should be assigned by used if needed.</remarks>
         public int Id { get; set; }
 
         /// <summary>
@@ -90,7 +111,7 @@ namespace GlobalHotKeys
         /// <para>This is a virtual shortcut. It has no real associated method. 
         /// It is used internally to terminate the application. It cannot be modified.</para>
         public static ShortcutData exitShortcut = new ShortcutData() {
-            Modifier = Modifiers.X_ALT | Modifiers.X_CTRL,
+            Modifier = Modifiers.X_ALT | Modifiers.X_CTRL | Modifiers.X_SHIFT,
             Key = Keys.C,
             Class = "Shortcuts.Handler",
             Method = "exit",
@@ -103,7 +124,7 @@ namespace GlobalHotKeys
         /// It is used internally to reset the shortcuts of the application to the default ones. 
         /// It cannot be modified.</para>
         public static ShortcutData resetShortcut = new ShortcutData() {
-            Modifier = Modifiers.X_ALT | Modifiers.X_CTRL,
+            Modifier = Modifiers.X_ALT | Modifiers.X_CTRL | Modifiers.X_SHIFT,
             Key = Keys.Esc,
             Class = "Shortcuts.Handler",
             Method = "reset",
@@ -255,7 +276,7 @@ namespace GlobalHotKeys
         /// </summary>
         /// <returns> true if this is a special shortcut, false otherwise</returns>
         /// <seealso cref="exitShortcut" />
-        /// <seealso cref="resetShirtcut" />
+        /// <seealso cref="resetShortcut" />
         public bool isSpecial()
         {
             // Signals CTRL + ALT + Escape reserved shortcut (reset):
@@ -299,7 +320,7 @@ namespace GlobalHotKeys
         ///     The key combination of the shortcut represented as a string.
         /// </summary>
         /// <para>The returned string is a representation of the shotcut key combination 
-        /// under the form [(L|R|X)_ALT+[(L|R|X)_CTRL+[(L|R|X)_SHIFT+[(L|R|X)_META]]]]Key.</para>
+        /// under the form <code>[(L|R|X)_ALT+[(L|R|X)_CTRL+[(L|R|X)_SHIFT+[(L|R|X)_META+]]]]Key</code></para>
         /// <returns>The representation of the shortcut key combination.</returns>
         public string keyCombination()
         {
@@ -323,7 +344,7 @@ namespace GlobalHotKeys
         ///     The action of the shortcut represented as a string.
         /// </summary>
         /// <para>The returned string is a representation of the shortcut action
-        /// under the form Class.Method([Param1[,Param2[,...]]]).</para>
+        /// under the form: <code>Class.Method([Param1[,Param2[,...]]])</code></para>
         /// <returns>The representation of the shortcut action.</returns>
         public string action()
         {
@@ -342,7 +363,7 @@ namespace GlobalHotKeys
         ///     A reprensentation of the shortcut as a string.
         /// </summary>
         /// This representation is of the form:
-        /// [(L|R|X)_ALT+[(L|R|X)_CTRL+[(L|R|X)_SHIFT+[(L|R|X)_META]]]]Key -> Class.Method([Param1[,Param2[,...]]])
+        /// <code>[(L|R|X)_ALT+[(L|R|X)_CTRL+[(L|R|X)_SHIFT+[(L|R|X)_META]]]]Key -> Class.Method([Param1[,Param2[,...]]])</code>
         /// <returns> The string representation of the shortcut.</returns>
         public override string ToString()
         {
@@ -369,6 +390,7 @@ namespace GlobalHotKeys
         /// <summary>
         ///     Returns a sensitive hash code for the object.
         /// </summary>
+        /// <para> The computation of the hash for a shortcut uses <see cref="Modifier" />, <see cref="Keys" />, <see cref="Class" /> and <see cref="Method"/>.</para>
         /// <remarks>The hash codes of 2 shortcuts are the same if and only if these 2 shortcuts are equal.</remarks>
         /// <returns> A hash code for this shortcut. </returns>
         /// <seealso cref="Equals"/>
