@@ -7,11 +7,49 @@ using log4net;
 
 namespace GlobalHotKeys
 {
+    /// <summary>
+    ///     A parser for plain text configuration files
+    /// </summary>
+    /// <para>
+    ///     The format of these file is similar to CSV.
+    ///     Each line describes a shortcut and each column is a field.
+    ///     The line are separated by <code>"\\r\\n"</code> and the columns are separated by one or more space.
+    ///     Quote marks <code>'"'</code> can be used if spaces are needed in a field (see field params below).
+    ///     Lines can be commented with <code>'#'</code>
+    /// </para>
+    /// <para>
+    ///     For this particular configuration, the columns are the following ones:
+    ///     <list type="number">
+    ///         <item><term><code>ALT: </code></term><description><code>[O|X|L|R]</code> to activate, deacitivate, select right or left ALT modifier</description></item>
+    ///         <item><term><code>CTRL: </code></term><description><code>[O|X]</code> to activate, deacitivate, select right or left CTRL modifier</description></item>
+    ///         <item><term><code>SHIFT: </code></term><description><code>[O|X]</code> to activate, deacitivate, select right or left SHIFT modifier</description></item>
+    ///         <item><term><code>META: </code></term><description><code>[O|X]</code> to activate, deacitivate, select right or left META modifier</description></item>
+    ///         <item><term>Key: </term><description>The key, see <see cref="ShortcutData.Keys"/> for key mnemonics</description></item>
+    ///         <item><term>Class: </term><description>The class where the method is.</description></item>
+    ///         <item><term>Method: </term><description>The method to invoke.</description></item>
+    ///         <item><term>Params: </term><description>The params to pass to the methods. The can be multiple params</description></item>
+    ///     </list>
+    ///     For an exemple of such a config file, see the file <code>globalhotkeys.conf</code> in the project folder.
+    /// </para>
     class PlainTextConfig : ConfigProvider
     {
+        /// <summary>
+        ///     Logger for GlobalHokKeys.
+        /// </summary>
+        /// <remarks>See Apache Log4net documentation for the logging interface.</remarks>
         private static readonly ILog log = LogManager.GetLogger(typeof(PlainTextConfig));
 
+        /// <summary>
+        ///     The config file name. 
+        /// </summary>
         private string mFileName;
+
+        /// <summary>
+        ///     The config file name.
+        /// </summary>
+        /// <remarks>
+        ///     The setter check that the file has the right permissions.
+        /// </remarks>
         public string FileName
         {
             get
@@ -26,11 +64,21 @@ namespace GlobalHotKeys
             }
         }
 
+        /// <summary>
+        ///     Constructs a new configuration.
+        /// </summary>
+        /// <remarks>
+        ///     The existance of the file is checked.
+        /// </remarks>
+        /// <param name="filename">The file name containing the configuration</param>
         public PlainTextConfig(string filename)
         {
             FileName = filename;
         }
 
+        /// <summary>
+        ///     Parses the configuration file.
+        /// </summary>
         public override void parseConfig()
         {
             TextReader inStream = new StreamReader(new FileStream(mFileName, FileMode.Open, FileAccess.Read));
@@ -79,12 +127,22 @@ namespace GlobalHotKeys
             inStream.Close();
         }
 
+        /// <summary>
+        ///     Checks the config file
+        /// </summary>
+        /// <para>In this case only the existance of the file is checked.</para>
+        /// <param name="path">The path of the file</param>
         private void checkConfigFile(string path)
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException("Could not find config file", path);
         }
 
+        /// <summary>
+        ///     Parse the modifiers for a shortcut.
+        /// </summary>
+        /// <param name="shortcut">The shortcut where to set modifiers</param>
+        /// <param name="line">The line of data from the config file</param>
         private void parseModifiers(ShortcutData shortcut, string line)
         {
             Array modifiers = Enum.GetValues(typeof(ShortcutData.Modifiers));
@@ -107,6 +165,15 @@ namespace GlobalHotKeys
             }
         }
 
+        /// <summary>
+        ///     Returns the next token.
+        /// </summary>
+        /// <remarks>
+        ///     Quotes are not removed.
+        /// </remarks>
+        /// <param name="line">The line of data from the config file</param>
+        /// <param name="i">The current index</param>
+        /// <returns>The next token</returns>
         private string nextToken(string line, ref int i)
         {
             int b;
@@ -123,6 +190,12 @@ namespace GlobalHotKeys
             return line.Substring(b, i - b);
         }
 
+        /// <summary>
+        ///     Parses the parameter list.
+        /// </summary>
+        /// <param name="shortcut">The shortcut where to set parameters</param>
+        /// <param name="line">The line of data from the config file</param>
+        /// <param name="i">The current index</param>
         private void parseParameters(ShortcutData shortcut, string line, int i)
         {
             while (i < line.Length) {
@@ -132,6 +205,15 @@ namespace GlobalHotKeys
             }
         }
 
+        /// <summary>
+        ///     Returns the next parameter token.
+        /// </summary>
+        /// <remarks>
+        ///     Quotes are removed.
+        /// </remarks>
+        /// <param name="line">The line of data from the config file</param>
+        /// <param name="i">The current index</param>
+        /// <returns>The next parameter token</returns>
         private string nextParameterToken(string line, ref int i)
         {
             int b;
