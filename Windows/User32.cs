@@ -262,7 +262,7 @@ namespace GlobalHotKeys
             /// <param name="attach"><c>true</c> to attach, <c>false</c> to detach</param>
             /// <returns><c>false</c> on error, <c>true</c> on success</returns>
             [DllImport("user32.dll", SetLastError=true)]
-            static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool attach);
+            private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool attach);
 
             /// <summary>
             ///     Synthesizes keystrokes, mouse motions, and button clicks.
