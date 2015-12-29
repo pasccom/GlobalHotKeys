@@ -310,7 +310,6 @@ namespace GlobalHotKeys
             /// <param name="winHandle">A handle to the window</param>
             /// <param name="cmd">Controls how the window is to be shown</param>
             /// <returns><c>0</c> if the window was previously visible, non-zero otherwise</returns>
-            // TODO cmd is an enum.
             [DllImport("user32.dll")]
             internal static extern bool ShowWindow(IntPtr winHandle, ShowState cmd);
 
