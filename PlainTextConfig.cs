@@ -174,6 +174,7 @@ namespace GlobalHotKeys
         /// <param name="line">The line of data from the config file</param>
         /// <param name="i">The current index</param>
         /// <returns>The next token</returns>
+        /// <seealso cref="nextParameterToken"/>
         private string nextToken(string line, ref int i)
         {
             int b;
@@ -214,6 +215,7 @@ namespace GlobalHotKeys
         /// <param name="line">The line of data from the config file</param>
         /// <param name="i">The current index</param>
         /// <returns>The next parameter token</returns>
+        /// <seealso cref="nextToken"/>
         private string nextParameterToken(string line, ref int i)
         {
             int b;

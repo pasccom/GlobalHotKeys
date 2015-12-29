@@ -3,7 +3,7 @@
 namespace GlobalHotKeys
 {
     /// <summary>
-    ///     Abstract base for classes providing a configuration for GlobalHotKeys
+    ///     Abstract base for classes providing a configuration for GlobalHotKeys.
     /// </summary>
     /// <para>
     ///     It defines a new event <see cref="NewShortcutEvent"/>, which is triggered 
