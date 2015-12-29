@@ -9,14 +9,54 @@ namespace GlobalHotKeys
 {
     namespace Windows
     {
+        /// <summary>
+        ///     A parser for plain text configuration files
+        /// </summary>
+        /// <para>
+        ///     The format of these file is similar to CSV.
+        ///     Each line describes a shortcut and each column is a field.
+        ///     The line are separated by <code>"\\r\\n"</code> and the columns are separated by one or more space.
+        ///     Quote marks <code>'"'</code> can be used if spaces are needed in a field (see field params below).
+        ///     Lines can be commented with <code>'#'</code>
+        /// </para>
+        /// <para>
+        ///     For this particular configuration, the columns are the following ones:
+        ///     <list type="number">
+        ///         <item><term>Name: </term><description>The name of the process</description></item>
+        ///         <item><term>ExePath </term><description>The path to the apprent executable of the process</description></item>
+        ///         <item><term>Shell: </term><description><code>[O|X]</code> to start in shell or not</description></item>
+        ///         <item><term>StartFolder</term><description>The folder where the process should be started</description></item>
+        ///         <item><term>RealExePath: </term><description>The path to the real executable of the process</description></item>
+        ///         <item><term>Arguments: </term><description>Argument to be passed to the process when it is started</description></item>
+        ///     </list>
+        ///     For an exemple of such a config file, see the file <code>globalhotkeys.processes.conf</code> in the project folder.
+        /// </para>
         class PlainTextConfig : ProcessesProvider
         {
+            /// <summary>
+            ///     Logger for GlobalHokKeys.
+            /// </summary>
+            /// <remarks>See Apache Log4net documentation for the logging interface.</remarks>
             private static readonly ILog log = LogManager.GetLogger(typeof(PlainTextConfig));
-
+            /// <summary>
+            ///     Id of the system user.
+            /// </summary>
             private static readonly IdentityReference idSystem = new NTAccount("System").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
+            /// <summary>
+            ///     Id of the Administrators user.
+            /// </summary>
             private static readonly IdentityReference idAdmin = new NTAccount("Administrateurs").Translate(Type.GetType("System.Security.Principal.SecurityIdentifier"));
-
+            /// <summary>
+            ///     Internal storage for the config file name.
+            /// </summary>
             private string mFileName;
+
+            /// <summary>
+            ///     The config file name.
+            /// </summary>
+            /// <remarks>
+            ///     The setter check that the file has the right permissions.
+            /// </remarks>
             public string FileName
             {
                 get
@@ -31,12 +71,22 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Constructs a new configuration.
+            /// </summary>
+            /// <remarks>
+            ///     The permissions on the file are checked.
+            /// </remarks>
+            /// <param name="filename">The file name containing the configuration</param>
             public PlainTextConfig(string filename)
                 : base()
             {
                 FileName = filename;
             }
 
+            /// <summary>
+            ///     Parses the configuration file.
+            /// </summary>
             public override void parseConfig()
             {
                 TextReader inStream = new StreamReader(new FileStream(mFileName, FileMode.Open, FileAccess.Read));
@@ -92,6 +142,11 @@ namespace GlobalHotKeys
                 inStream.Close();
             }
 
+            /// <summary>
+            ///     Check that the user corresponding to the given id is an authorized user.
+            /// </summary>
+            /// <param name="idOwner">Id of a user</param>
+            /// <seealso cref="checkAcl"/>
             private void checkUser(IdentityReference idOwner)
             {
                 log.Debug("Owner identity: " + idOwner);
@@ -100,6 +155,13 @@ namespace GlobalHotKeys
                     throw new UnauthorizedAccessException("Users should not be owner of the configuration file.");
             }
 
+            /// <summary>
+            ///     Check an Access Control List.
+            /// </summary>
+            /// <para>
+            ///     No ordinary user should able to modify the corresponding file.
+            /// </para>
+            /// <param name="acl">An ACL</param>
             private void checkAcl(AuthorizationRuleCollection acl)
             {
                 Dictionary<IdentityReference, FileSystemRights> userAllowRights = new Dictionary<IdentityReference, FileSystemRights>();
@@ -157,6 +219,15 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Check the config file.
+            /// </summary>
+            /// <para>
+            ///     Check that the file exists, is on a path that normal users cannot change
+            ///     and cannot be changed itself by ordinary users.
+            /// </para>
+            /// <param name="path">The path to the config file</param>
+            /// <see cref="checkConfigPath"/>
             private void checkConfigFile(string path)
             {
                 if (!File.Exists(path))
@@ -170,6 +241,14 @@ namespace GlobalHotKeys
                 checkAcl(File.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier")));
             }
 
+            /// <summary>
+            ///     Recursively check a path
+            /// </summary>
+            /// <para>
+            ///     Check that the path can not be altered by an ordinary user.
+            /// </para>
+            /// <param name="path">The path to check</param>
+            /// <see cref="checkConfigFile"/>
             private void checkConfigPath(string path)
             {
                 int sep = path.LastIndexOf('\\');
@@ -182,6 +261,16 @@ namespace GlobalHotKeys
                 checkAcl(Directory.GetAccessControl(path, AccessControlSections.Access).GetAccessRules(true, true, Type.GetType("System.Security.Principal.SecurityIdentifier")));
             }
 
+            /// <summary>
+            ///     Returns the next token.
+            /// </summary>
+            /// <remarks>
+            ///     Quotes are not removed.
+            /// </remarks>
+            /// <param name="line">The line of data from the config file</param>
+            /// <param name="i">The current index</param>
+            /// <returns>The next token</returns>
+            /// <seealso cref="nextParameterToken"/>
             private string nextToken(string line, ref int i)
             {
                 int b;
@@ -198,6 +287,12 @@ namespace GlobalHotKeys
                 return line.Substring(b, i - b);
             }
 
+            /// <summary>
+            ///     Parses process arguments.
+            /// </summary>
+            /// <param name="process">The information about the process</param>
+            /// <param name="line">The line of data from the config file</param>
+            /// <param name="i">The current index</param>
             private void parseArguments(ProcessData process, string line, int i)
             {
                 while (i < line.Length) {
@@ -207,6 +302,16 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Returns the next parameter token.
+            /// </summary>
+            /// <remarks>
+            ///     Quotes are removed.
+            /// </remarks>
+            /// <param name="line">The line of data from the config file</param>
+            /// <param name="i">The current index</param>
+            /// <returns>The next parameter token</returns>
+            /// <seealso cref="nextToken"/>
             private string nextParameterToken(string line, ref int i)
             {
                 int b;

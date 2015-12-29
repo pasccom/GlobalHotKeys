@@ -6,17 +6,46 @@ namespace GlobalHotKeys
 {
     namespace Windows
     {
+        /// <summary>
+        ///     Abstract base for for classes providing a configuration for GlobalHotKeys processes.
+        /// </summary>
+        /// <para>
+        ///     It handles the storage of the known processes, which can be retrieved by name
+        ///     thanks to <see cref="GetProcess"/> or the <c>[]</c> operator.
+        /// </para>
+        /// <para>
+        ///     The processes are added by implementation thanks to the protected method <see cref="newProcess"/>.
+        /// </para>
         abstract class ProcessesProvider
         {
+            /// <summary>
+            ///     Logger for GlobalHokKeys.
+            /// </summary>
+            /// <remarks>See Apache Log4net documentation for the logging interface.</remarks>
             static private readonly ILog log = LogManager.GetLogger(typeof(ProcessesProvider));
 
+            /// <summary>
+            ///     The dictionnary of known processes.
+            /// </summary>
             private Dictionary<string, ProcessData> mProcesses;
 
+            /// <summary>
+            ///     Constructor.
+            /// </summary>
+            /// <para>
+            ///     Create the dictionnary of known processes.
+            /// </para>
             public ProcessesProvider()
             {
                 mProcesses = new Dictionary<string, ProcessData>();
             }
 
+            /// <summary>
+            ///     Add a new known process.
+            /// </summary>
+            /// <remarks>If the process already exists it is overwritten.</remarks>
+            /// <param name="name">The name of the new process</param>
+            /// <param name="process">Information about the process</param>
             protected void newProcess(string name, ProcessData process)
             {
                 log.Info("Added new process: " + name);
@@ -35,6 +64,12 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Get a known process by name.
+            /// </summary>
+            /// <param name="name">The name of the serached process</param>
+            /// <returns>The data associated with the process</returns>
+            /// <see cref="getProcess"/>
             public ProcessData this[string name] 
             { 
                 get 
@@ -43,6 +78,12 @@ namespace GlobalHotKeys
                 } 
             }
 
+            /// <summary>
+            ///     Get a known process by name.
+            /// </summary>
+            /// <param name="name">The name of the serached process</param>
+            /// <returns>The data associated with the process</returns>
+            /// <see cref="this[string name]"/>
             public ProcessData getProcess(string name)
             {
                 try {
@@ -52,6 +93,10 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Config file parsing.
+            /// </summary>
+            /// <para>This function is in charge of the parsing of the config file.</para>
             public abstract void parseConfig();
         }
     }
