@@ -18,8 +18,7 @@ namespace GlobalHotKeys
             /// <summary>
             ///     The name of the unknown process.
             /// </summary>
-            // TODO put set private
-            public string ProcessName { get; set; }
+            public string ProcessName { get; private set; }
 
             /// <summary>
             ///     Default constructor.
