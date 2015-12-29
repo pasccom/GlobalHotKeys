@@ -246,7 +246,7 @@ namespace GlobalHotKeys
             /// <summary>
             ///     Parses a size flag.
             /// </summary>
-            /// <param name="sizeName">The size as a string (either a number or one of  <c>"Default"</c>, <c>"Normal"</c>, <c>"Maximize"</c> and <c>"ShowMaximized"</c></description>)</param>
+            /// <param name="sizeName">The size as a string (one of <c>"Default"</c>, <c>"Normal"</c>, <c>"Maximize"</c> and <c>"ShowMaximized"</c></description>)</param>
             /// <returns>The parsed size flag</returns>
             static private User32.ShowState parseSize(String sizeName)
             {
@@ -291,16 +291,16 @@ namespace GlobalHotKeys
                 switch (sizeFlag) {
                 case User32.ShowState.Restore:
                     if (isMiniMized(winHandle))
-                        User32.ShowWindow(winHandle, (int)User32.ShowState.Normal);
+                        User32.ShowWindow(winHandle, User32.ShowState.Normal);
                     User32.SetForeground(winHandle);
                     break;
                 case User32.ShowState.Maximize:
                     if (isMiniMized(winHandle))
-                        User32.ShowWindow(winHandle, (int)User32.ShowState.ShowMaximized);
+                        User32.ShowWindow(winHandle, User32.ShowState.ShowMaximized);
                     User32.SetForeground(winHandle);
                     break;
                 default:
-                    User32.ShowWindow(winHandle, (int)sizeFlag);
+                    User32.ShowWindow(winHandle, sizeFlag);
                     User32.SetForeground(winHandle);
                     break;
                 }
