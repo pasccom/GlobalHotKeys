@@ -63,7 +63,7 @@ namespace GlobalHotKeys
             }
 
             /// <summary>
-            ///     Shut the computer down or cancel a previous shutdown, depending on the current State.
+            ///     Shut the computer down or cancel a previous shutdown, depending on the current <see cref="State"/>.
             /// </summary>
             /// <para>
             ///     Arguments
@@ -72,7 +72,7 @@ namespace GlobalHotKeys
             ///     </list>
             /// </para>
             /// <param name="args">Arguments to the function (see above)</param>
-            /// <seealso cref="rebbot"/>
+            /// <seealso cref="reboot"/>
             static public void shutdown(List<string> args)
             {
                 if (args.Count > 1)
@@ -105,7 +105,7 @@ namespace GlobalHotKeys
             }
 
             /// <summary>
-            ///     Reboot the computer or cancel a previous reboot, depending on the current State.
+            ///     Reboot the computer or cancel a previous reboot, depending on the current <see cref="State"/>.
             /// </summary>
             /// <para>
             ///     Arguments
