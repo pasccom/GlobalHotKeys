@@ -13,7 +13,7 @@ namespace GlobalHotKeys
         ///     Defines the methods of Windows namespace.
         /// </summary>
         /// <para>
-        ///     This is the main class of Windows namespace, which are
+        ///     This is the main class of Windows namespace, it defines the methods available from this namespace. They are
         ///     <list type="bullet">
         ///         <item><term><see cref="activate"/>: </term><description>Bring foreground or start a process
         ///             <list type="bullet">
@@ -66,7 +66,6 @@ namespace GlobalHotKeys
                     mProcessessList = value;
                 }
             }
-
             /// <summary>
             ///     List of declared methods.
             /// </summary>
