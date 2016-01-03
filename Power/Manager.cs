@@ -7,14 +7,53 @@ namespace GlobalHotKeys
 {
     namespace Power
     {
+        /// <summary>
+        ///     Defines the methods of Power namespace.
+        /// </summary>
+        /// <para>
+        ///     This is the main class of Power namespace, it defines the methods available from this namespace. They are
+        ///     <list type="bullet">
+        ///         <item><term><see cref="shutdown"/>: </term><description>Shut computer down 
+        ///             <list type="bullet">
+        ///                 <item><term>Delay (opt): </term><description>Delay before effective shutdown (1 min, if unspecified)</description></item>
+        ///             </list>
+        ///         </description></item>
+        ///         <item><term><see cref="reboot"/>: </term><description>Reboot the computer
+        ///             <list type="bullet">
+        ///                 <item><term>Delay (opt): </term><description>Delay before effective shutdown (1 min, if unspecified)</description></item>
+        ///             </list>
+        ///         </description></item>
+        ///         <item><term><see cref="logOff"/>: </term><description>Log off from the current session. It takes no arguments</description></item>
+        ///         <item><term><see cref="lockScreen"/>: </term><description>Lock the computer. It takes no arguments</description></item>
+        ///     </list>
+        /// </para>
         class Manager
         {
-            private enum State {Running, ShuttingDownn, Rebooting};
-
+            /// <summary>
+            ///     States of the computer
+            /// </summary>
+            private enum State {
+                /// <summary>Computer is normally running</summary>
+                Running,
+                /// <summary>Computer is waiting before shuting down</summary>
+                ShuttingDownn,
+                /// <summary>Computer is waiting before rebooting</summary>
+                Rebooting
+            };
+            
+            /// <summary>
+            ///     Logger for GlobalHokKeys.
+            /// </summary>
+            /// <remarks>See Apache Log4net documentation for the logging interface.</remarks>
             static private readonly ILog log = LogManager.GetLogger(typeof(Manager));
-
+            /// <summary>
+            ///     Current state of the computer
+            /// </summary>
             static private State mState = State.Running;
-
+            /// <summary>
+            ///     List of declared methods.
+            /// </summary>
+            /// <remarks>Only these methods should be called externally.</remarks>
             static public List<string> AuthorizedMethods
             {
                 get
@@ -23,6 +62,17 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Shut the computer down or cancel a previous shutdown, depending on the current State.
+            /// </summary>
+            /// <para>
+            ///     Arguments
+            ///     <list type="bullet">
+            ///         <item><term>Delay (opt): </term><description>Delay before effective shutdown (1 min, if unspecified)</description></item>
+            ///     </list>
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
+            /// <seealso cref="rebbot"/>
             static public void shutdown(List<string> args)
             {
                 if (args.Count > 1)
@@ -54,6 +104,17 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Reboot the computer or cancel a previous reboot, depending on the current State.
+            /// </summary>
+            /// <para>
+            ///     Arguments
+            ///     <list type="bullet">
+            ///         <item><term>Delay (opt): </term><description>Delay before effective shutdown (1 min, if unspecified)</description></item>
+            ///     </list>
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
+            /// <seealso cref="shutdown"/>
             static public void reboot(List<string> args)
             {
                 if (args.Count > 1)
@@ -87,6 +148,13 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Log off from the current session.
+            /// </summary>
+            /// <para>
+            ///     This method does not take any arguments.
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
             static public void logOff(List<string> args)
             {
                 if (args.Count != 0)
@@ -97,6 +165,13 @@ namespace GlobalHotKeys
                 Process.Start("shutdown", "/l");
             }
 
+            /// <summary>
+            ///     Lock the computer.
+            /// </summary>
+            /// <para>
+            ///     This method does not take any arguments.
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
             static public void lockScreen(List<string> args)
             {
                 if (args.Count != 0)
