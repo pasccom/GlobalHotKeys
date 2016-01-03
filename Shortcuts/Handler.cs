@@ -10,40 +10,111 @@ namespace GlobalHotKeys
 {
     namespace Shortcuts
     {
+        /// <summary>
+        ///     Singleton handling the shortcuts.
+        /// </summary>
+        /// <para>
+        ///     This singleton class is the core of GlobalHotKeys: It is in charge of dispatching
+        ///     the events coming from the HookHandler to the right class.
+        ///     The singleton is protected by a mutex and can be retrived with <see cref="getInstance"/>.
+        /// </para>
+        /// <para>
+        ///     It also defines some methods which are available by shortcuts
+        ///     <list type="bullet">
+        ///         <item><term>exit: </term><description>Phantom method to implement a special shortcut. Exits GlobalHotKeys.</description></item>
+        ///         <item><term>reset</term><description>Phantom method to implement a special shortcut. </description></item>
+        ///         <item><term>resetShortcuts</term><description></description></item>
+        ///         <item><term>loadConfig</term><description></description></item>
+        ///         <item><term>noop</term><description></description></item>
+        ///     </list>
+        /// </para>
         class Handler
         {
+            /// <summary>
+            ///     Logger for GlobalHokKeys.
+            /// </summary>
+            /// <remarks>See Apache Log4net documentation for the logging interface.</remarks>
             static private readonly ILog log = LogManager.GetLogger(typeof(Handler));
-
-            // Data for thread synchronization:
+            /// <summary>
+            ///     Queue of actions to be done.
+            /// </summary>
+            /// <remarks>This is used for thread synchronization</remarks>
+            /// <seealso cref="mActionSemaphore"/>
             private Queue<int> mActionQueue;
+            /// <summary>
+            ///     Semaphore holding the number of actions to be done.
+            /// </summary>
+            /// <remarks>This is used for thread synchronization</remarks>
+            /// <seealso cref="mActionQueue"/>
             private Semaphore mActionSemaphore;
-
+            /// <summary>
+            ///     Stores the initial configuration.
+            /// </summary>
+            /// <para>
+            ///     This member stores the configuration which is loaded at startup from the given <see cref="ConfigProvider"/>.
+            ///     It can be altered thanks to <see cref="loadConfig"/> and reset thanks to <see cref="resetConfig"/>
+            /// </para>
+            /// <seealso cref="mCurrentShortcutsList"/>
             private List<ShortcutData> mDefaultShortcutsList;
+            /// <summary>
+            ///     The list of currently available shortcuts.
+            /// </summary>
+            /// <para>
+            ///     This member stors the list of shortcuts which are currently available.
+            ///     This list can be altered at run time using the method <see cref="loadConfig"/>
+            ///     and can be reset to its original value with <see cref="resetConfig"/>.
+            /// </para>
+            /// <seealso cref="mDefaultShortcutsList"/>
             private List<ShortcutData> mCurrentShortcutsList;
+            /// <summary>
+            ///     Handler for the events coming from the Keyboard.
+            /// </summary>
             private HookHandler mHookHandler;
+            /// <summary>
+            ///     A mutex for the singleton.
+            /// </summary>
             private static Mutex sInstanceMutex = new Mutex();
+            /// <summary>
+            ///     The singleton.
+            /// </summary>
             private static Handler sInstance;
 
+            /// <summary>
+            ///     Where to search for a shortcut.
+            /// </summary>
             public enum SearchScope
             {
+                /// <summary>Search everywhere (equivalent to <see cref="AllCurrentFirst"/>)</summary>
                 All,
+                /// <summary>Search everywhere, current shortcuts first and then default shortcuts</summary>
                 AllCurrentFirst = All,
+                /// <summary>Search everywhere, default shortcuts first and then current shortcuts</summary>
                 AllDefaultFirst,
+                /// <summary>Search only in current shortcut list</summary>
                 Current,
+                /// <summary>Search only in default shortcut list</summary>
                 Default
             }
 
+            /// <summary>
+            ///     List of declared methods.
+            /// </summary>
+            /// <remarks>Only these methods should be called externally.</remarks>
+            /// <remarks><c>exit</c> and <c>reset</c> should not be called externally. Such calls will fail.</remarks>
             static public List<string> AuthorizedMethods
             {
                 get
                 {
-                    /* NOTE exit and reset are phantom methods, needed for the implementation of special shortcuts.
-                     * Trying to call these will fail.
-                     */
                     return new List<string>() { "exit", "reset", "resetShortcuts", "loadConfig", "noop" };
                 }
             }
 
+            /// <summary>
+            ///     Get the singleton.
+            /// </summary>
+            /// <remarks>This method is protected by a mutex.</remarks>
+            /// <returns>The singleton</returns>
+            /// <seealso cref="getInstance(ConfigProvider)"/>
             public static Handler getInstance()
             {
                 Handler instance;
@@ -54,7 +125,13 @@ namespace GlobalHotKeys
 
                 return instance;
             }
-
+            /// <summary>
+            ///     Get the singleton with the given config.
+            /// </summary>
+            /// <param name="config">The config to read</param>
+            /// <remarks>This method is protected by a mutex.</remarks>
+            /// <returns>The singleton</returns>
+            /// <seealso cref="getInstance()"/>
             public static Handler getInstance(ConfigProvider config)
             {
                 Handler instance;
@@ -69,13 +146,26 @@ namespace GlobalHotKeys
 
                 return instance;
             }
-
+            /// <summary>
+            ///     Get the config provider from a config file path.
+            /// </summary>
+            /// <param name="path">The path to the config file</param>
+            /// <remarks>Currently only <see cref="PlainTextConfig"/> is available, so this method is equivalent to
+            /// <code>
+            ///     new PlainTextConfig(path);
+            /// </code></remarks>
+            /// <returns>A <see cref="ConfigProvider"/> for the given configuration file</returns>
             public static ConfigProvider getConfigProvider(string path)
             {
                 // TODO Add XML, database and registry key configuration possiblilities.
                 return new PlainTextConfig(path);
             }
 
+            /// <summary>
+            ///     Private constructor.
+            /// </summary>
+            /// <param name="config">The config to read.</param>
+            /// <remarks>To retrieve an instance of this class, use <see cref="getInstance"/>.</remarks>
             private Handler(ConfigProvider config)
             {
                 mActionQueue = new Queue<int>();
@@ -93,11 +183,21 @@ namespace GlobalHotKeys
                 loadShortcuts();
             }
 
+            /// <summary>
+            ///     Destructor.
+            /// </summary>
             ~Handler()
             {
                 mHookHandler.reset();
             }
 
+            /// <summary>
+            ///     Do nothing.
+            /// </summary>
+            /// <para>
+            ///     This method does not take any arguments.
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
             public void noop(List<string> args)
             {
                 if (args.Count != 0)
@@ -105,7 +205,13 @@ namespace GlobalHotKeys
 
                 log.Info("Called Shortcuts.Handler.noop()");
             }
-
+            /// <summary>
+            ///     Reset the current shortcut list.
+            /// </summary>
+            /// <para>
+            ///     This method does not take any arguments.
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
             public void resetShortcuts(List<string> args)
             {
                 if (args.Count != 0)
@@ -118,7 +224,16 @@ namespace GlobalHotKeys
                 mCurrentShortcutsList = mDefaultShortcutsList;
                 loadShortcuts();
             }
-
+            /// <summary>
+            ///     Load a config file.
+            /// </summary>
+            /// <para>
+            ///     Arguments
+            ///     <list type="bullet">
+            ///         <item><term>path: </term>The path to the config file to read.</item>    
+            ///     </list>
+            /// </para>
+            /// <param name="args">Arguments to the function (see above)</param>
             public void loadConfig(List<string> args)
             {
                 if (args.Count != 1)
@@ -142,7 +257,10 @@ namespace GlobalHotKeys
 
                 loadShortcuts();
             }
-
+            /// <summary>
+            ///     Reset the current shortcut list.
+            /// </summary>
+            /// <remarks>The special <c>exit</c> and <c>reset</c> shortcuts are automatically reloaded.</remarks>
             private void resetShortcuts()
             {
                 mHookHandler.reset();
@@ -155,7 +273,10 @@ namespace GlobalHotKeys
                 loadShortcut(ShortcutData.exitShortcut, -1, false);
                 loadShortcut(ShortcutData.resetShortcut, -2, false);
             }
-
+            /// <summary>
+            ///     Load a new config in the default shortcut list.
+            /// </summary>
+            /// <param name="config">The config to load</param>
             private void changeDefaultConfig(ConfigProvider config)
             {
                 resetShortcuts();
@@ -165,7 +286,10 @@ namespace GlobalHotKeys
 
                 loadShortcuts();
             }
-
+            /// <summary>
+            ///     Load a config in the default shortcut list.
+            /// </summary>
+            /// <param name="config">The config to load</param>
             private void setDefaultConfig(ConfigProvider config)
             {
                 config.NewShortcutEvent += (ShortcutData shortcut) =>
@@ -176,6 +300,15 @@ namespace GlobalHotKeys
                 config.parseConfig();
             }
 
+            /// <summary>
+            ///     Thread function which calls the methods.
+            /// </summary>
+            /// <para>
+            ///     This function is called in a separate execution thread. 
+            ///     It is in charge of consuming the actions coming from the <see cref="HookHandler"/> 
+            ///     and calling the corresponding methods.
+            /// </para>
+            // TODO make it private.
             public void actionThread()
             {
                 log.InfoFormat("Worker thread started ({0})", Thread.CurrentThread.ManagedThreadId);
@@ -205,6 +338,13 @@ namespace GlobalHotKeys
                 log.Info("Worker thread exited");
             }
 
+            /// <summary>
+            ///     Main loop.
+            /// </summary>
+            /// <para>
+            ///     This function starts the <see cref="actionThread"/>.
+            ///     It also handles the messages, the application receives if global shortcuts are used.
+            /// </para>
             public void exec()
             {
                 Thread workerThread = new Thread(actionThread);
@@ -270,11 +410,24 @@ namespace GlobalHotKeys
                 workerThread.Join();
             }
 
+            /// <summary>
+            ///     Wait for the modifiers to be released.
+            /// </summary>
+            /// <param name="timeout">Maximum time to wait, if set to -1, waits for ever</param>
+            /// <returns><c>true</c> if the modifer were released, <c>false</c> if the function timed out</returns>
             public bool waitModifiersReleased(Int32 timeout = -1)
             {
                 return mHookHandler.waitModifiersReleased(timeout);
             }
 
+            /// <summary>
+            ///     Find a shortcut in the shortcut lists by modifiers and key.
+            /// </summary>
+            /// <param name="shortcutModifiers">The modifier of the shortcut</param>
+            /// <param name="shortcutKey">The key of the shortcut</param>
+            /// <param name="where">A flag to tell where the shortcut should be searched</param>
+            /// <returns>The matching shortcut data or <c>null</c> if it is not found</returns>
+            /// <seealso cref="findAllShortcuts"/>
             public ShortcutData findShortcut(ShortcutData.Modifiers shortcutModifiers, ShortcutData.Keys shortcutKey, SearchScope where = SearchScope.All)
             {
                 if (mCurrentShortcutsList == mDefaultShortcutsList)
@@ -293,7 +446,14 @@ namespace GlobalHotKeys
                     throw new ArgumentException("Bad value for search scope: " + where);
                 }
             }
-
+            /// <summary>
+            ///     Find all shortcuts in the shortcut lists matching the given class and method.
+            /// </summary>
+            /// <param name="shortcutClass">The class of the shortcut</param>
+            /// <param name="shortcutMethod">The method of the shortcut</param>
+            /// <param name="where">A flag to tell where the shortcut should be searched</param>
+            /// <returns>A list of matching shortcut data</returns>
+            /// <seealso cref="findShortcut"/>
             public List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, SearchScope where = SearchScope.All)
             {
                 if (mCurrentShortcutsList == mDefaultShortcutsList)
@@ -313,6 +473,13 @@ namespace GlobalHotKeys
                 }
             }
 
+            /// <summary>
+            ///     Find a shortcut in the shortcut lists by modifiers and key.
+            /// </summary>
+            /// <param name="shortcutModifiers">The modifier of the shortcut</param>
+            /// <param name="shortcutKey">The key of the shortcut</param>
+            /// <param name="where">The list of shortcuts where it should be searched</param>
+            /// <returns>The matching shortcut data or <c>null</c> if it is not found</returns>
             private ShortcutData findShortcut(ShortcutData.Modifiers shortcutModifiers, ShortcutData.Keys shortcutKey, List<ShortcutData> where)
             {
                 return where.Find((ShortcutData shortcut) =>
@@ -320,7 +487,13 @@ namespace GlobalHotKeys
                     return ((shortcut.Modifier == shortcutModifiers) && (shortcut.Key == shortcutKey));
                 }).Clone();
             }
-
+            /// <summary>
+            ///     Find all shortcuts in the shortcut lists matching the given class and method.
+            /// </summary>
+            /// <param name="shortcutClass">The class of the shortcut</param>
+            /// <param name="shortcutMethod">The method of the shortcut</param>
+            /// <param name="where">The list of shortcuts where it should be searched</param>
+            /// <returns>A list of matching shortcut data</returns>
             private List<ShortcutData> findAllShortcuts(string shortcutClass, string shortcutMethod, List<ShortcutData> where)
             {
                 return where.FindAll((ShortcutData shortcut) =>
@@ -329,6 +502,18 @@ namespace GlobalHotKeys
                 }).ConvertAll<ShortcutData>((ShortcutData input) => { return input.Clone(); });
             }
 
+            /// <summary>
+            ///     Check the given shortcut.
+            /// </summary>
+            /// <para>
+            ///     Check that
+            ///     <list type="number">
+            ///         <item>The shortcut is not a special one</item>
+            ///         <item>The class exists</item>
+            ///         <item>The method is in the list of authorized methods for this class</item>
+            ///     </list>
+            /// </para>
+            /// <param name="shortcut">The shortcut to check</param>
             private void checkShortcut(ShortcutData shortcut)
             {
                 // Check that shortcut is valid:
@@ -361,7 +546,17 @@ namespace GlobalHotKeys
                 }) == null))
                     throw new UnauthorizedShortcutException("Not authorized method: " + shortcut.Method, shortcut);
             }
-
+            /// <summary>
+            ///     Call the method assiciated with a shortcut.
+            /// </summary>
+            /// <para>
+            ///     The shortcut is first checked using <see cref="checkShortcut"/>.
+            /// </para>
+            /// <para>
+            ///     First try to retrieve an instance of the given class and invoke the desired member.
+            ///     If it fails, try to invoke a static method of the given class.
+            /// </para>
+            /// <param name="shortcut">The shortcut whose associated method should be invoked</param>
             private void callShortcut(ShortcutData shortcut)
             {
                 checkShortcut(shortcut);
@@ -410,6 +605,18 @@ namespace GlobalHotKeys
 
             }
 
+            /// <summary>
+            ///     Register a shortcut and assign its identifier
+            /// </summary>
+            /// <para>
+            ///     This method searches for a valid identifier for the given shortcut,
+            ///     appends it at the right place in the current shortcut list
+            ///     and loads it in the <see cref="HookHandler"/>.
+            /// </para>
+            /// <param name="shortcut">The shortcut to register</param>
+            /// <seealso cref="unregisterShortcut"/>
+            /// <seealso cref="replaceShortcut"/>
+            /// <seealso cref="activateShortcut"/>
             public void registerShortcut(ShortcutData shortcut)
             {
                 int s = 0;
@@ -420,7 +627,18 @@ namespace GlobalHotKeys
                 loadShortcut(shortcut, s, true);
                 mCurrentShortcutsList.Insert(s - 1, shortcut);
             }
-
+            /// <summary>
+            ///     Unregister a shortcut.
+            /// </summary>
+            /// <para>
+            ///     This method finds the identifier of the shortcut,
+            ///     takes it from the current shortcut list
+            ///     and unloads it form the <see cref="HookHandler"/>.
+            /// </para>
+            /// <param name="shortcut">The shortcut to unregister</param>
+            /// <seealso cref="registerShortcut"/>
+            /// <seealso cref="replaceShortcut"/>
+            /// <seealso cref="deactivateShortcut"/>
             public void unregisterShortcut(ShortcutData shortcut)
             {
                 int s = findShortcutId(shortcut);
@@ -431,7 +649,18 @@ namespace GlobalHotKeys
                 mHookHandler.unloadShortcut(shortcut.Modifier, shortcut.Key);
                 mCurrentShortcutsList.RemoveAt(s - 1);
             }
-
+            /// <summary>
+            ///     Replaces a shortcut by another.
+            /// </summary>
+            /// <para>
+            ///     This function is equivalent to calling successively
+            ///     <see cref="unregisterShortcut"/> with the first shortcut
+            ///     and <see cref="registerShortcut"/> with the second shortcut.
+            /// </para>
+            /// <param name="oldShortcut">The shortcut to unregister</param>
+            /// <param name="newShortcut">The shortcut to register</param>
+            /// <seealso cref="registerShortcut"/>
+            /// <seealso cref="unregisterShortcut"/>
             public void replaceShortcut(ShortcutData oldShortcut, ShortcutData newShortcut)
             {
                 int s = findShortcutId(oldShortcut);
@@ -446,7 +675,16 @@ namespace GlobalHotKeys
                     mCurrentShortcutsList.Insert(s - 1, newShortcut);
                 }
             }
-
+            /// <summary>
+            ///     Activate a shortcut.
+            /// </summary>
+            /// <para>
+            ///     This method finds the identifier of the shortcut
+            ///     and loads it in the <see cref="HookHandler"/>.
+            /// </para>
+            /// <param name="shortcut">The shortcut to activate</param>
+            /// <seealso cref="deactivateShortcut"/>
+            /// <seealso cref="registerShortcut"/>
             public void activateShortcut(ShortcutData shortcut)
             {
                 int s = findShortcutId(shortcut);
@@ -456,7 +694,16 @@ namespace GlobalHotKeys
 
                 loadShortcut(mCurrentShortcutsList[s - 1], s, true);
             }
-
+            /// <summary>
+            ///     Deactivate a shortcut.
+            /// </summary>
+            /// <para>
+            ///     This method finds the identifier of the shortcut
+            ///     and unloads it from the <see cref="HookHandler"/>.
+            /// </para>
+            /// <param name="shortcut">The shortcut to deactivate</param>
+            /// <seealso cref="activateShortcut"/>
+            /// <seealso cref="unregisterShortcut"/>
             public void deactivateShortcut(ShortcutData shortcut)
             {
                 int s = findShortcutId(shortcut);
@@ -467,7 +714,12 @@ namespace GlobalHotKeys
                 mHookHandler.unloadShortcut(shortcut.Modifier, shortcut.Key);
                 mCurrentShortcutsList[s - 1].Id = 0;
             }
-
+            /// <summary>
+            ///     Find the id of a shortcut.
+            /// </summary>
+            /// <param name="shortcut">The shortcut to find</param>
+            /// <returns>The identfier of the shortcut (i.e. its place in the current shortcut list). 
+            /// If the item is not found in the current shortcut list the value is equal to the size of the list.</returns>
             // TODO: I think the id member is not needed any more. It can be deleted.
             private int findShortcutId(ShortcutData shortcut)
             {
@@ -478,7 +730,13 @@ namespace GlobalHotKeys
 
                 return s;
             }
-
+            /// <summary>
+            ///     Load a shortcut in the <see cref="HookHandler"/>
+            /// </summary>
+            /// <param name="shortcut">The shortcut to load</param>
+            /// <param name="id">The identifier of the shortcut</param>
+            /// <param name="userDefined">Whether the shortcut is user-defined, in which case it is checked that tha shortcut is not special</param>
+            /// <seealso cref="loadShortcuts"/>
             private void loadShortcut(ShortcutData shortcut, int id, bool userDefined = true)
             {
                 if (userDefined && shortcut.isSpecial())
@@ -493,7 +751,10 @@ namespace GlobalHotKeys
                 log.Info("Sucessfully registered shortcut (id=" + id + "): " + shortcut);
                 shortcut.Id = id;
             }
-
+            /// <summary>
+            ///     Load a list shortcut in the <see cref="HookHandler"/>
+            /// </summary>
+            /// <seealso cref="loadShortcut"/>
             private void loadShortcuts()
             {
                 try {
