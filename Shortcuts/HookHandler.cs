@@ -7,58 +7,145 @@ namespace GlobalHotKeys
 {
     namespace Shortcuts
     {
+        /// <summary>
+        ///     Handles the events coming from the low-level keyboard hook.
+        /// </summary>
+        /// <para>
+        /// </para>
         class HookHandler
         {
+            /// <summary>
+            ///     Logger for GlobalHokKeys.
+            /// </summary>
+            /// <remarks>See Apache Log4net documentation for the logging interface.</remarks>
             static private readonly ILog log = LogManager.GetLogger(typeof(HookHandler));
 
+            /// <summary>
+            ///     Handle to the hook.
+            /// </summary>
+            /// <seealso cref="User32.SetWindowsHookEx"/>
+            /// <seealso cref="User32.UnhookWindowsHookEx"/>
             private IntPtr mHookHandle;
+            /// <summary>
+            ///     Pointer to the callback to the hook.
+            /// </summary>
+            /// <para>
+            ///     This is required so that the garbage collector do not remove the callback pointer from the memory.
+            /// </para>
             private User32.HookProc mHookCallbackHandle;
+            /// <summary>
+            ///     States of the modifiers
+            /// </summary>
             private ModifierStates[] mModifierStates;
+            /// <summary>
+            ///     Saved states of the modifiers
+            /// </summary>
+            /// <remark>
+            ///     The modifiers are saved when the key is pressed, 
+            ///     so that if the modifiers are released before the key is released, the right shortcut is invoked.
+            ///     But the shortcut is called when the key is released.
+            /// </remark>
             private ModifierStates[] mSavedModifierStates;
-
+            /// <summary>
+            ///     Semaphore indicating if a modifer is still pressed.
+            /// </summary>
+            /// <seealso cref="waitModifiersReleased"/>
             private Semaphore mModifierSemaphore;
+            /// <summary>
+            ///     Mutex to protect the has table of registered shortcuts.
+            /// </summary>
+            /// <seealso cref="mKeyCombinations"/>
             private Mutex mKeyCombinationsMutex;
+            /// <summary>
+            ///     The hash table of registered shortcuts.
+            /// </summary>
+            /// <remarks>
+            ///     It is protected by the mutex <see cref="mKeyCombinationsMutex"/>.
+            /// </remarks>
             private int[] mKeyCombinations;
 
+            /// <summary>
+            ///     Local enum for the modifiers.
+            /// </summary>
             private enum ModifierIndexes
             {
+                /// <summary>ALT modifier</summary>
                 ALT = 0,
+                /// <summary>CTRL modifier</summary>
                 CTRL,
+                /// <summary>SHIFT modifier</summary>
                 SHIFT,
+                /// <summary>META (windows) modifier</summary>
                 META,
+                /// <summary>Modifier value count (must be last one)</summary>
                 Count
             }
 
+            /// <summary>
+            ///     Local enum for modifier states
+            /// </summary>
             private enum ModifierStates
             {
+                /// <summary>No modifier pressed</summary>
                 None = 0x0,
+                /// <summary>Right modifier pressed</summary>
                 Right = 0x1,
+                /// <summary>Left modifier pressed</summary>
                 Left = 0x2,
+                /// <summary>Both modifier pressed</summary>
                 Both = 0x3
             }
 
+            /// <summary>
+            ///     Virtual key codes for the modifier
+            /// </summary>
+            /// <seealso cref="ModifierScanCodes"/>
             private enum ModifierVirtualKeyCodes : uint
             {
+                /// <summary>Left META modifier key code</summary>
                 L_META = 0x5B,
+                /// <summary>Right META modifier key code</summary>
                 R_META = 0x5C,
+                /// <summary>Left SHIFT modifier key code</summary>
                 L_SHIFT = 0xA0,
+                /// <summary>Right SHIFT modifier key code</summary>
                 R_SHIFT = 0xA1,
+                /// <summary>Left CTRL modifier key code</summary>
                 L_CTRL = 0xA2,
+                /// <summary>Right CTRL modifier key code</summary>
                 R_CTRL = 0xA3,
+                /// <summary>Left ALT modifier key code</summary>
                 L_ALT = 0xA4,
+                /// <summary>Right ALT modifier key code</summary>
                 R_ALT = 0xA5
             }
 
+            /// <summary>
+            ///     Scan codes of the modifier
+            /// </summary>
+            /// <seealso cref="ModifierVirtualKeyCodes"/>
             private enum ModifierScanCodes : uint
             {
+                /// <summary>CTRL modifier scan code (identical for left and right CTRL key)</summary>
                 CTRL = 0x1D,
+                /// <summary>Left SHIFT modifier scan code</summary>
                 L_SHIFT = 0x2A,
+                /// <summary>Right SHIFT modifier scan code</summary>
                 R_SHIFT = 0x36,
+                /// <summary>ALT modifier scan code (identical for left and right ALT key)</summary>
                 ALT = 0x38,
+                /// <summary>Left META modifier scan code</summary>
                 L_META = 0x5B,
+                /// <summary>Right META modifier scan code</summary>
                 R_META = 0x5C
             }
 
+            /// <summary>
+            ///     Constructor
+            /// </summary>
+            /// <para>
+            ///     Initialises the members and registers the hook.
+            /// </para>
             public HookHandler()
             {
                 mModifierSemaphore = new Semaphore(1, 1);
@@ -79,7 +166,12 @@ namespace GlobalHotKeys
                     throw new ApplicationException("Installing hook failed. See previous message for the code");
                 }
             }
-
+            /// <summary>
+            ///     Destructor
+            /// </summary>
+            /// <para>
+            ///     Unregisters the hook and allows the garbage collector to delete the callback pointer.
+            /// </para>
             ~HookHandler()
             {
                 if (!User32.UnhookWindowsHookEx(mHookHandle))
@@ -87,6 +179,14 @@ namespace GlobalHotKeys
                 mHookCallbackHandle = null;
             }
 
+            /// <summary>
+            ///     Wait until the modifiers are released.
+            /// </summary>
+            /// <para>
+            ///     Wait until the modifiers have been released or timeout has elapsed (it it is positive). 
+            /// </para>
+            /// <param name="timeout">Time to wait before returning. Negative to wait forever. 0 to test but not wait.</param>
+            /// <returns><c>true</c> if the modifiers have been released</returns>
             public bool waitModifiersReleased(Int32 timeout)
             {
                 bool ret = mModifierSemaphore.WaitOne(timeout);
@@ -96,7 +196,18 @@ namespace GlobalHotKeys
                 return ret;
             }
 
-
+            /// <summary>
+            ///     The hook callback.
+            /// </summary>
+            /// <para>
+            ///     If code is negative nothing is done and the next hook is called with <see cref="CallNextHookEx"/>.
+            ///     Then handles the modifiers state management. Then it locks the key combination mutex and looks for a matching shortcut.
+            ///     Finally it posts a <c>WM_HOTKEY</c> message to the shortcut <see cref="Handler"/> which calls the method in another thread.
+            /// </para>
+            /// <param name="code">A code the hook procedure uses to determine how to process the message</param>
+            /// <param name="wParam">Additional message-specific information (see MSDN for a specific message)</param>
+            /// <param name="lParam">Additional message-specific information (see MSDN for a specific message)</param>
+            /// <returns>Non-zero to prevent further processing</returns>
             public IntPtr keyboardLowLevelHookCallback(int code, IntPtr wParam, IntPtr lParam)
             {
                 if (code < 0)
@@ -260,9 +371,9 @@ namespace GlobalHotKeys
                     return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
                 }
             }
-
-
-
+            /// <summary>
+            ///     Restes the registered shortcut list.
+            /// </summary>
             public void reset()
             {
                 mKeyCombinationsMutex.WaitOne();
@@ -270,7 +381,13 @@ namespace GlobalHotKeys
                     mKeyCombinations[i] = 0;
                 mKeyCombinationsMutex.ReleaseMutex();
             }
-
+            /// <summary>
+            ///     Load a shortcut in the hash table of registed shortcuts
+            /// </summary>
+            /// <param name="modifier">The modifier of the shortcut</param>
+            /// <param name="key">The key code of the shortcut</param>
+            /// <param name="id">The id of the shortcut</param>
+            /// <seealso cref="unloadShortcut"/>
             public void loadShortcut(ShortcutData.Modifiers modifier, ShortcutData.Keys key, int id)
             {
                 uint index = hash(modifier, key);
@@ -283,7 +400,13 @@ namespace GlobalHotKeys
                 mKeyCombinations[index] = id;
                 mKeyCombinationsMutex.ReleaseMutex();
             }
-
+            /// <summary>
+            ///     Unload a shortcut from the hash table of registed shortcuts
+            /// </summary>
+            /// <param name="modifier">The modifier of the shortcut</param>
+            /// <param name="key">The key code of the shortcut</param>
+            /// <param name="id">The id of the shortcut</param>
+            /// <seealso cref="loadShortcut"/>
             public void unloadShortcut(ShortcutData.Modifiers modifier, ShortcutData.Keys key)
             {
                 uint index = hash(modifier, key);
@@ -297,7 +420,12 @@ namespace GlobalHotKeys
                 mKeyCombinations[index] = 0;
                 mKeyCombinationsMutex.ReleaseMutex();
             }
-
+            /// <summary>
+            ///     Computes the hash code for a shortcut.
+            /// </summary>
+            /// <param name="modifier">The modifier of the shortcut</param>
+            /// <param name="key">The key code of the shortcut</param>
+            /// <returns>The hash code of the shorctut</returns>
             private uint hash(ShortcutData.Modifiers modifier, ShortcutData.Keys key)
             {
                 if (ShortcutData.getKeyHashCode(key) == 0)
@@ -305,7 +433,12 @@ namespace GlobalHotKeys
 
                 return (uint)modifier + (ShortcutData.getKeyHashCode(key) - 1) * 256;
             }
-
+            /// <summary>
+            ///     Update the array of modifier state.
+            /// </summary>
+            /// <param name="index">The index of the modifier</param>
+            /// <param name="side">The state of the modifier</param>
+            /// <param name="released">Whether the modifier was released or pressed</param>
             private void updateModifierState(ModifierIndexes index, ModifierStates side, bool released)
             {
                 if (released)
