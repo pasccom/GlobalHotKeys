@@ -50,6 +50,7 @@ namespace GlobalHotKeys
             /// <summary>
             ///     Constructor.
             /// </summary>
+            /// <param name="msg">Exception message</param>
             /// <param name="shortcut">The <see cref="UnauthorizedShortcut"/></param>
             public UnauthorizedShortcutException(string msg, ShortcutData shortcut) :
                 base(msg)

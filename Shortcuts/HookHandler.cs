@@ -40,11 +40,11 @@ namespace GlobalHotKeys
             /// <summary>
             ///     Saved states of the modifiers
             /// </summary>
-            /// <remark>
+            /// <remarks>
             ///     The modifiers are saved when the key is pressed, 
             ///     so that if the modifiers are released before the key is released, the right shortcut is invoked.
             ///     But the shortcut is called when the key is released.
-            /// </remark>
+            /// </remarks>
             private ModifierStates[] mSavedModifierStates;
             /// <summary>
             ///     Semaphore indicating if a modifer is still pressed.
@@ -405,7 +405,6 @@ namespace GlobalHotKeys
             /// </summary>
             /// <param name="modifier">The modifier of the shortcut</param>
             /// <param name="key">The key code of the shortcut</param>
-            /// <param name="id">The id of the shortcut</param>
             /// <seealso cref="loadShortcut"/>
             public void unloadShortcut(ShortcutData.Modifiers modifier, ShortcutData.Keys key)
             {

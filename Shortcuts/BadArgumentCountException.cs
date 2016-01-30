@@ -96,6 +96,7 @@ namespace GlobalHotKeys
             /// <summary>
             ///     Constructor.
             /// </summary>
+            /// <param name="msg">Exception message</param>
             /// <param name="min"><see cref="Min"/>imum number of arguments the method expects</param>
             /// <param name="max"><see cref="Max"/>imum number of arguments the method expects</param>
             public BadArgumentCountException(string msg, uint min, uint max) :
